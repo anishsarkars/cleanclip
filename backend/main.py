@@ -341,20 +341,38 @@ def verify_payment(body: PaymentVerification):
 async def webhook(request: Request):
     try:
         data = await request.json()
-        event = data.get("event", "")
-        if event in ("payment.captured", "subscription.charged"):
+        event = data.get("type") or data.get("event") or ""
+        
+        # DodoPayments: checkout.paid
+        if event == "checkout.paid":
+            payload = data.get("data", {})
+            metadata = payload.get("metadata", {})
+            user_id = metadata.get("user_id")
+            plan = metadata.get("plan", "monthly")
+            
+            if user_id:
+                print(f"✅ DodoPayments Success: Upgrading user {user_id} to {plan}")
+                update_user_by_id(user_id, {
+                    "plan": plan,
+                    "credits": PLAN_CREDITS.get(plan, 50),
+                    "last_reset": datetime.now().isoformat(),
+                })
+
+        # Razorpay: payment.captured (legacy support)
+        elif event in ("payment.captured", "subscription.charged"):
             payload = data.get("payload", {}).get("payment", {}).get("entity", {})
             notes = payload.get("notes", {})
             user_id = notes.get("user_id")
             plan = notes.get("plan", "monthly")
             if user_id:
+                print(f"✅ Razorpay Success: Upgrading user {user_id} to {plan}")
                 update_user_by_id(user_id, {
                     "plan": plan,
                     "credits": PLAN_CREDITS.get(plan, 50),
                     "last_reset": datetime.now().isoformat(),
                 })
     except Exception as e:
-        print(f"Webhook error: {e}")
+        print(f"❌ Webhook error: {e}")
     return {"status": "received"}
 
 # ──────────────────────────────────────────────
