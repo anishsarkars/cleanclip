@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const MONTHLY_PRODUCT_ID = "pdt_0NalSjZWHhamGs4oYJvTe";
-const YEARLY_PRODUCT_ID = "pdt_0NalSUMsJzvscQl8QNvVM";
+export const dynamic = "force-dynamic";
+
+const MONTHLY_PRODUCT_ID = process.env.DODO_MONTHLY_PRODUCT_ID || "pdt_0NalSjZWHhamGs4oYJvTe";
+const YEARLY_PRODUCT_ID = process.env.DODO_YEARLY_PRODUCT_ID || "pdt_0NalSUMsJzvscQl8QNvVM";
 
 function getDodoBaseUrl() {
   const env = process.env.DODO_PAYMENTS_ENV || "test";
@@ -23,6 +25,7 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.DODO_PAYMENTS_API_KEY;
     if (!apiKey) {
+      console.error("DodoPayments Error: MISSING_DODO_PAYMENTS_API_KEY");
       return NextResponse.json({ error: "MISSING_DODO_PAYMENTS_API_KEY" }, { status: 500 });
     }
 
@@ -36,7 +39,8 @@ export async function POST(req: NextRequest) {
       ...(body?.metadata || {}),
     };
 
-    const resp = await fetch(`${getDodoBaseUrl()}/checkouts`, {
+    const dodoUrl = `${getDodoBaseUrl()}/checkouts`;
+    const resp = await fetch(dodoUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -52,6 +56,7 @@ export async function POST(req: NextRequest) {
 
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
+      console.error("DodoPayments API Failure:", { status: resp.status, data, url: dodoUrl });
       return NextResponse.json(
         { error: "DODO_CHECKOUT_CREATE_FAILED", details: data },
         { status: resp.status }
@@ -60,12 +65,14 @@ export async function POST(req: NextRequest) {
 
     const checkoutUrl = data?.checkout_url;
     if (!checkoutUrl || typeof checkoutUrl !== "string") {
+      console.error("DodoPayments Error: MISSING_CHECKOUT_URL", data);
       return NextResponse.json({ error: "MISSING_CHECKOUT_URL", details: data }, { status: 502 });
     }
 
     return NextResponse.json({ checkout_url: checkoutUrl });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error";
+    console.error("DodoPayments Internal Error:", e);
     return NextResponse.json({ error: "INTERNAL_ERROR", message: msg }, { status: 500 });
   }
 }
