@@ -145,17 +145,15 @@ export default function Home() {
 
   const handleFileSelected = useCallback(async (file: File) => {
     // 1. Check Guest Limit
-    if (!user) {
+    if (!user || !userInfo) {
       if (guestUsage >= 3) {
         openSignIn();
         return;
       }
-    } else {
+    } else if (userInfo.credits <= 0) {
       // Check auth credits
-      if (userInfo.credits <= 0) {
-        setShowPaywall(true);
-        return;
-      }
+      setShowPaywall(true);
+      return;
     }
 
     setSelectedFile(file);
