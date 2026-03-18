@@ -19,41 +19,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const pk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  const pkLooksValid =
-    typeof pk === "string" &&
-    (pk.startsWith("pk_test_") || pk.startsWith("pk_live_")) &&
-    !pk.includes("your_key_here");
-
-  if (!pkLooksValid) {
-    return (
-      <html lang="en">
-        <body className="antialiased" suppressHydrationWarning>
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              zIndex: 9999,
-              padding: "10px 14px",
-              background: "#111827",
-              color: "#fff",
-              fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: "0.01em",
-            }}
-          >
-            Clerk is not configured. Set a valid <code>NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code>{" "}
-            in <code>frontend/.env.local</code> (must start with <code>pk_test_</code> or{" "}
-            <code>pk_live_</code>), then restart <code>next dev</code>.
-          </div>
-          <div style={{ paddingTop: 44 }}>{children}</div>
-        </body>
-      </html>
-    );
-  }
-
   return (
     <ClerkProvider>
       <html lang="en">
