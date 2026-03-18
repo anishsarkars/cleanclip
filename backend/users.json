@@ -1,0 +1,38 @@
+{
+  "test@cleanclip.com": {
+    "id": "usr_3375fb97a2",
+    "email": "test@cleanclip.com",
+    "password_hash": "$2b$12$dBxfmXma4g28vEES/PuNqezl39EV/GkQBG11/4hERWhmgA6sOIbGi",
+    "plan": "free",
+    "credits": 15,
+    "last_reset": "2026-03-18T21:40:31.415383",
+    "created_at": "2026-03-18T21:39:50.656595"
+  },
+  "nevatiki@mailinator.com": {
+    "id": "usr_f0b0c7a2e5",
+    "email": "nevatiki@mailinator.com",
+    "password_hash": "$2b$12$rpgIJdzPMpaOeCnoAaBE/e1UIPWdbfAox5oJ10GAuFsQvlKBmdTnW",
+    "plan": "free",
+    "credits": 15,
+    "last_reset": "2026-03-19T01:56:17.580858",
+    "created_at": "2026-03-19T01:56:13.124846"
+  },
+  "anishsarkarprojects@gmail.com": {
+    "id": "user_3B8MEyvB3DZcWdP5OYIMVijqF7R",
+    "email": "anishsarkarprojects@gmail.com",
+    "password_hash": "",
+    "plan": "free",
+    "credits": 15,
+    "last_reset": "2026-03-19T02:02:54.328569",
+    "created_at": "2026-03-19T02:02:44.474511"
+  },
+  "anish99sarkar@gmail.com": {
+    "id": "user_3B8MQphTMRNnJ0jInUgsIGm2hUd",
+    "email": "anish99sarkar@gmail.com",
+    "password_hash": "",
+    "plan": "free",
+    "credits": 15,
+    "last_reset": "2026-03-19T02:07:31.157558",
+    "created_at": "2026-03-19T02:07:19.344511"
+  }
+}

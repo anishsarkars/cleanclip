@@ -1,0 +1,15 @@
+node_modules/
+.next/
+venv/
+env/
+__pycache__/
+*.webm
+*.mp4
+*.gif
+.env.local
+.env
+output/
+temp/
+.u2net/
+.pytest_cache/
+*.log
