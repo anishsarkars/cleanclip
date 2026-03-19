@@ -1,5 +1,7 @@
 "use client";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useUser, useClerk } from "@clerk/nextjs";
+import { processVideoBackground } from "@/utils/videoProcessor";
 import Navbar from "./components/Navbar";
 import HeroSection from "./components/HeroSection";
 import ProcessingScreen from "./components/ProcessingScreen";
@@ -9,7 +11,6 @@ import PricingSection from "./components/PricingSection";
 import PaywallModal from "./components/PaywallModal";
 import OnboardingModal from "./components/OnboardingModal";
 import Footer from "./components/Footer";
-import { useUser, useClerk } from "@clerk/nextjs";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const GUEST_USAGE_KEY = "cleanclip_guest_usage";
@@ -34,7 +35,6 @@ export default function Home() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [guestUsage, setGuestUsage] = useState(0);
-  const [jobId, setJobId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   
   const { user, isLoaded } = useUser();
@@ -43,7 +43,6 @@ export default function Home() {
   const [originalUrl, setOriginalUrl] = useState("");
   const [processedUrl, setProcessedUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const initGuest = () => {
@@ -119,53 +118,6 @@ export default function Home() {
     // DodoPayments links are handled via direct redirect in handleUpgrade
   }, []);
 
-  const stopPolling = () => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  };
-
-  const pollStatus = useCallback((jobId: string) => {
-    stopPolling();
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`${API}/status/${jobId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-
-        setProgress(data.progress ?? 0);
-        setStep(data.step ?? "Processing…");
-
-        if (data.status === "done") {
-          stopPolling();
-
-          // Refresh user data if logged in
-          if (token) {
-            const userRes = await fetch(`${API}/auth/me`, {
-              headers: { "Authorization": `Bearer ${token}` }
-            });
-            if (userRes.ok) setUserInfo(await userRes.json());
-          }
-
-          const resultRes = await fetch(`${API}/result/${jobId}`);
-          if (!resultRes.ok) throw new Error("Failed to fetch result");
-          const blob = await resultRes.blob();
-          setProcessedUrl(URL.createObjectURL(blob));
-          setAppState("result");
-        } else if (data.status === "error") {
-          stopPolling();
-          setErrorMsg(data.step || "Processing failed.");
-          setAppState("error");
-        }
-      } catch (err) {
-        stopPolling();
-        setErrorMsg("Connection lost. Retrying…");
-        setAppState("error");
-      }
-    }, 1500);
-  }, [token]);
-
   const handleFileSelected = useCallback(async (file: File) => {
     // 1. Check Guest Limit
     if (!user || !userInfo) {
@@ -174,65 +126,55 @@ export default function Home() {
         return;
       }
     } else if (userInfo.credits <= 0) {
-      // Check auth credits
       setShowPaywall(true);
       return;
     }
 
     setSelectedFile(file);
     setOriginalUrl(URL.createObjectURL(file));
-    setProgress(0);
-    setStep("Uploading…");
     setAppState("processing");
-
-    const form = new FormData();
-    form.append("file", file);
+    setProgress(5);
+    setStep("Initializing Magic AI...");
 
     try {
-      const headers: any = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
-
-      const res = await fetch(`${API}/remove-bg`, {
-        method: "POST",
-        headers,
-        body: form,
+      // 2. Start Local Processing
+      const resultUrl = await processVideoBackground(file, (status) => {
+        setProgress(status.progress);
+        setStep(status.step);
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.detail === "GUEST_LIMIT_REACHED") {
-          openSignIn();
-          handleReset();
-          return;
+      // 3. Deduct Credit (Cloud)
+      if (user && userInfo) {
+        const res = await fetch(`${API}/deduct-credit`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
+          },
+          body: JSON.stringify({ job_id: "local_job" }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUserInfo(prev => prev ? { ...prev, credits: data.remaining_credits } : null);
         }
-        if (data.detail === "CREDITS_EXHAUSTED") {
-          setShowPaywall(true);
-          handleReset();
-          return;
-        }
-        throw new Error(data.detail || "Upload failed");
-      }
-
-      // Update Guest Usage locally if not logged in
-      if (!user) {
+      } else {
+        // Guest usage
         const today = new Date().toISOString().split('T')[0];
         const newCount = guestUsage + 1;
         setGuestUsage(newCount);
         localStorage.setItem(GUEST_USAGE_KEY, JSON.stringify({ date: today, count: newCount }));
-      } else {
-        setUserInfo(prev => prev ? { ...prev, credits: data.remaining_credits } : null);
       }
 
-      setJobId(data.job_id);
-      pollStatus(data.job_id);
+      setProcessedUrl(resultUrl);
+      setAppState("result");
     } catch (err: any) {
-      setErrorMsg(err.message);
+      console.error("Client processing failed:", err);
+      setErrorMsg(err.message || "Something went wrong with the AI Engine. Please try a shorter video.");
       setAppState("error");
     }
-  }, [userInfo, guestUsage, token, pollStatus]);
+  }, [user, userInfo, guestUsage, token, openSignIn]);
 
   const handleReset = useCallback(() => {
-    stopPolling();
     setAppState("idle");
     setSelectedFile(null);
     setProgress(0); setStep("");
@@ -274,37 +216,12 @@ export default function Home() {
   };
 
   const handleDownload = async () => {
-    if (!user || !userInfo) {
-      openSignIn();
-      return;
-    }
-    if (userInfo.credits <= 0) {
-      setShowPaywall(true);
-      return;
-    }
-    try {
-      const res = await fetch(`${API}/deduct-credit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ job_id: jobId }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.detail === "CREDITS_EXHAUSTED" || res.status === 403) setShowPaywall(true);
-        else alert(data.detail || "Error deducting credit");
-        return;
-      }
-      setUserInfo(prev => prev ? { ...prev, credits: data.remaining_credits } : null);
-      
-      const link = document.createElement("a");
-      link.href = processedUrl;
-      link.download = selectedFile?.name ? selectedFile.name.replace(/\.[^.]+$/, "_no_bg.webm") : "result.webm";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      alert("Something went wrong");
-    }
+    const link = document.createElement("a");
+    link.href = processedUrl;
+    link.download = selectedFile?.name ? selectedFile.name.replace(/\.[^.]+$/, "_no_bg.webm") : "result.webm";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (

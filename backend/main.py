@@ -23,9 +23,10 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from PIL import Image, ImageSequence, ImageDraw, ImageFont
 from rembg import new_session, remove
-import bcrypt
-import jwt
-import razorpay
+from supabase import create_client, Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ──────────────────────────────────────────────
 # Config
@@ -39,20 +40,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-TEMP_DIR = Path("temp")
-OUTPUT_DIR = Path("output")
-DB_FILE = Path("users.json")
-GUEST_DB_FILE = Path("guests.json")
-TEMP_DIR.mkdir(exist_ok=True)
-OUTPUT_DIR.mkdir(exist_ok=True)
-
-SECRET_KEY = "cleanclip_jwt_secret_2026"
-ALGORITHM = "HS256"
-
-# Razorpay config — replace with real keys from Razorpay Dashboard
-RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "rzp_test_YourKeyHere")
-RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "YourSecretHere")
-rzp_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+# Supabase Config
+SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 PLAN_CREDITS = {
     "free": 10,
@@ -64,88 +55,73 @@ PLAN_AMOUNT_PAISE = {
     "yearly": 149900,   # ₹1499
 }
 
-# ──────────────────────────────────────────────
-# DB Helpers
-# ──────────────────────────────────────────────
-def load_json(path: Path) -> dict:
-    if not path.exists():
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        # print(f"DEBUG: Loaded {len(data)} items from {path.name}")
-        return data
-    except Exception as e:
-        print(f"ERROR loading {path.name}: {e}")
-        return {}
-
-def save_json(path: Path, data: dict):
-    # print(f"DEBUG: Saving {len(data)} items to {path.name}")
-    try:
-        # Atomic-ish write: save to temp then rename
-        tmp_path = path.with_suffix(".tmp")
-        tmp_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        tmp_path.replace(path)
-    except Exception as e:
-        print(f"ERROR saving {path.name}: {e}")
-
-
 def get_guest_record(ip: str) -> dict:
-    guests = load_json(GUEST_DB_FILE)
     today = datetime.now().strftime("%Y-%m-%d")
-    if ip not in guests or guests[ip].get("date") != today:
-        guests[ip] = {"date": today, "count": 0}
-        save_json(GUEST_DB_FILE, guests)
-    return guests[ip]
-
+    try:
+        res = supabase.table("guests").select("*").eq("ip", ip).execute()
+        if not res.data or res.data[0].get("date") != today:
+            data = {"ip": ip, "date": today, "count": 0}
+            supabase.table("guests").upsert(data).execute()
+            return data
+        return res.data[0]
+    except Exception as e:
+        print(f"Supabase Guest Error: {e}")
+        return {"date": today, "count": 0}
 
 def increment_guest(ip: str):
-    guests = load_json(GUEST_DB_FILE)
     today = datetime.now().strftime("%Y-%m-%d")
-    if ip not in guests or guests[ip].get("date") != today:
-        guests[ip] = {"date": today, "count": 1}
-    else:
-        guests[ip]["count"] += 1
-    save_json(GUEST_DB_FILE, guests)
-
+    rec = get_guest_record(ip)
+    new_count = rec["count"] + 1
+    supabase.table("guests").update({"count": new_count}).eq("ip", ip).execute()
 
 def _maybe_reset_credits(user: dict) -> dict:
-    """Auto-reset credits if 30 days have passed since last reset."""
-    last_reset = datetime.fromisoformat(user.get("last_reset", datetime.now().isoformat()))
-    if (datetime.now() - last_reset).days >= 30:
+    """Auto-reset credits if 30 days have passed since last reset date."""
+    last_reset_str = user.get("last_reset_date")
+    if not last_reset_str:
+        return user
+    
+    try:
+        last_reset = datetime.fromisoformat(last_reset_str.replace("Z", "+00:00"))
+    except:
+        return user
+
+    if (datetime.now(last_reset.tzinfo) - last_reset).days >= 30:
         plan = user.get("plan", "free")
-        user["credits"] = PLAN_CREDITS.get(plan, 10)
-        user["last_reset"] = datetime.now().isoformat()
+        new_credits = PLAN_CREDITS.get(plan, 15)
+        user["credits_remaining"] = new_credits
+        user["last_reset_date"] = datetime.now().isoformat()
+        supabase.table("users").update({
+            "credits_remaining": new_credits,
+            "last_reset_date": user["last_reset_date"]
+        }).eq("clerk_user_id", user["clerk_user_id"]).execute()
     return user
 
-
 def get_user_by_email(email: str) -> Optional[dict]:
-    users = load_json(DB_FILE)
-    return users.get(email)
-
+    res = supabase.table("users").select("*").eq("email", email).execute()
+    if not res.data:
+        return None
+    return res.data[0]
 
 def get_user_by_id(user_id: str) -> Optional[dict]:
-    users = load_json(DB_FILE)
-    for email, user in users.items():
-        if user.get("id") == user_id:
-            user = _maybe_reset_credits(user)
-            users[email] = user
-            save_json(DB_FILE, users)
-            return user
-    return None
+    res = supabase.table("users").select("*").eq("clerk_user_id", user_id).execute()
+    if not res.data:
+        return None
+    user = res.data[0]
+    return _maybe_reset_credits(user)
+    return _maybe_reset_credits(profile)
 
 
 def update_user_by_id(user_id: str, updates: dict) -> Optional[dict]:
-    users = load_json(DB_FILE)
-    for email, user in users.items():
-        if user.get("id") == user_id:
-            user.update(updates)
-            users[email] = user
-            save_json(DB_FILE, users)
-            return user
+    try:
+        res = supabase.table("profiles").update(updates).eq("id", user_id).execute()
+        if res.data:
+            return res.data[0]
+    except Exception as e:
+        print(f"Update User Error: {e}")
     return None
 
 # ──────────────────────────────────────────────
-# JWT Helpers
+# Supabase DB Helpers
 # ──────────────────────────────────────────────
 def create_token(user_id: str) -> str:
     payload = {
@@ -200,78 +176,38 @@ class DeductRequest(BaseModel):
 # ──────────────────────────────────────────────
 # Auth Routes
 # ──────────────────────────────────────────────
-@app.post("/auth/signup")
-def signup(body: UserCreate):
-    users = load_json(DB_FILE)
-    if body.email in users:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    hashed = bcrypt.hashpw(body.password.encode(), bcrypt.gensalt()).decode()
-    user_id = f"usr_{uuid.uuid4().hex[:10]}"
-    now = datetime.now().isoformat()
-
-    users[body.email] = {
-        "id": user_id,
-        "email": body.email,
-        "password_hash": hashed,
-        "plan": "none",        # onboarding not done yet
-        "credits": 0,
-        "last_reset": now,
-        "created_at": now,
-    }
-    save_json(DB_FILE, users)
-    token = create_token(user_id)
-    return {"access_token": token, "user_id": user_id, "plan": "none", "credits": 0}
-
-
-@app.post("/auth/login")
-def login(body: LoginData):
-    user = get_user_by_email(body.email)
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    if not bcrypt.checkpw(body.password.encode(), user["password_hash"].encode()):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_token(user["id"])
-    return {
-        "access_token": token,
-        "user_id": user["id"],
-        "plan": user["plan"],
-        "credits": user["credits"],
-    }
-
 @app.post("/auth/clerk-sync")
 def clerk_sync(body: ClerkSyncDict):
-    users = load_json(DB_FILE)
-    for email, u in users.items():
-        if u.get("id") == body.user_id:
-            user = _maybe_reset_credits(u)
-            users[email] = user
-            save_json(DB_FILE, users)
-            token = create_token(body.user_id)
-            return {"access_token": token, "user_id": body.user_id, "plan": user["plan"], "credits": user["credits"]}
-            
-    if body.email in users:
-        user = users[body.email]
-        user["id"] = body.user_id
-        save_json(DB_FILE, users)
+    """Sync Clerk User to Supabase Users table."""
+    user = get_user_by_id(body.user_id)
+    if user:
         token = create_token(body.user_id)
-        return {"access_token": token, "user_id": body.user_id, "plan": user["plan"], "credits": user["credits"]}
-        
-    # Case 3: brand new user
+        return {
+            "access_token": token, 
+            "user_id": body.user_id, 
+            "plan": user["plan"], 
+            "credits": user["credits_remaining"]
+        }
+            
+    # Case 2: New user
     now = datetime.now().isoformat()
-    users[body.email] = {
-        "id": body.user_id,
+    new_user = {
+        "clerk_user_id": body.user_id,
         "email": body.email,
-        "password_hash": "",
         "plan": "none",
-        "credits": 0,
-        "last_reset": now,
+        "credits_remaining": 0,
+        "credits_total": 15,
+        "last_reset_date": now,
         "created_at": now,
     }
-    save_json(DB_FILE, users)
-    print(f"✅ New User Sync: {body.email} ({body.user_id})")
-    token = create_token(body.user_id)
-    return {"access_token": token, "user_id": body.user_id, "plan": "none", "credits": 0}
+    try:
+        supabase.table("users").upsert(new_user).execute()
+        print(f"✅ Supabase User Sync: {body.email} ({body.user_id})")
+        token = create_token(body.user_id)
+        return {"access_token": token, "user_id": body.user_id, "plan": "none", "credits": 0}
+    except Exception as e:
+        print(f"Sync Save Error: {e}")
+        raise HTTPException(status_code=500, detail="Could not sync user to Database")
 
 
 @app.get("/auth/me")
@@ -280,10 +216,10 @@ def get_me(authorization: str = Header(None)):
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     return {
-        "user_id": user["id"],
+        "user_id": user["clerk_user_id"],
         "email": user["email"],
         "plan": user["plan"],
-        "credits": user["credits"],
+        "credits": user["credits_remaining"],
     }
 
 
@@ -295,10 +231,11 @@ def select_plan(body: PlanSelection, authorization: str = Header(...)):
 
     if body.plan == "free":
         credits = PLAN_CREDITS["free"]
-        updated = update_user_by_id(user["id"], {
+        updated = update_user_by_id(user["clerk_user_id"], {
             "plan": "free",
-            "credits": credits,
-            "last_reset": datetime.now().isoformat(),
+            "credits_remaining": credits,
+            "credits_total": credits,
+            "last_reset_date": datetime.now().isoformat(),
         })
         return {"status": "success", "plan": "free", "credits": credits}
 
@@ -339,8 +276,9 @@ def verify_payment(body: PaymentVerification):
         credits = PLAN_CREDITS.get(plan, 50)
         update_user_by_id(user_id, {
             "plan": plan,
-            "credits": credits,
-            "last_reset": datetime.now().isoformat(),
+            "credits_remaining": credits,
+            "credits_total": credits,
+            "last_reset_date": datetime.now().isoformat(),
         })
         return {"status": "success", "plan": plan, "credits": credits}
     except Exception as e:
@@ -388,18 +326,20 @@ async def webhook(request: Request):
                 print(f"✅ Razorpay Success (ID): Upgrading user {user_id} to {plan}")
                 update_user_by_id(user_id, {
                     "plan": plan,
-                    "credits": PLAN_CREDITS.get(plan, 50),
-                    "last_reset": datetime.now().isoformat(),
+                    "credits_remaining": PLAN_CREDITS.get(plan, 50),
+                    "credits_total": PLAN_CREDITS.get(plan, 50),
+                    "last_reset_date": datetime.now().isoformat(),
                 })
             elif email:
                 print(f"✅ Razorpay Success (Email): Matching {email} for plan {plan}")
-                users = load_json(DB_FILE)
-                if email in users:
-                    user = users[email]
-                    user["plan"] = plan
-                    user["credits"] = PLAN_CREDITS.get(plan, 50)
-                    user["last_reset"] = datetime.now().isoformat()
-                    save_json(DB_FILE, users)
+                user = get_user_by_email(email)
+                if user:
+                    update_user_by_id(user["clerk_user_id"], {
+                        "plan": plan,
+                        "credits_remaining": PLAN_CREDITS.get(plan, 50),
+                        "credits_total": PLAN_CREDITS.get(plan, 50),
+                        "last_reset_date": datetime.now().isoformat(),
+                    })
                     print(f"💰 Credits applied to {email}")
                 else:
                     print(f"❌ User not found for email: {email}")
@@ -415,6 +355,10 @@ rembg_session = None
 # Optimized for 512MB RAM: Max 2 workers to avoid OOM
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=min(os.cpu_count() or 2, 2))
 
+TEMP_DIR = Path("temp")
+OUTPUT_DIR = Path("output")
+TEMP_DIR.mkdir(exist_ok=True)
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 @app.on_event("startup")
 async def startup():
@@ -505,16 +449,15 @@ def deduct_credit(body: DeductRequest, authorization: str = Header(...)):
     job = jobs.get(body.job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    if job.get("deducted"):
-        return {"status": "ok", "remaining_credits": user["credits"]}
-    if user["credits"] <= 0:
+    if (user.get("credits_remaining") or 0) <= 0:
         raise HTTPException(status_code=403, detail="CREDITS_EXHAUSTED")
+    
     job["deducted"] = True
-    new_credits = user["credits"] - 1
-    updated = update_user_by_id(user["id"], {"credits": new_credits})
+    new_credits = user["credits_remaining"] - 1
+    updated = update_user_by_id(user["clerk_user_id"], {"credits_remaining": new_credits})
     
     if updated:
-        print(f"💰 Credit Deducted: {user['email']} (-1) -> {new_credits}")
+        print(f"💰 Credit Deducted: {user.get('email')} (-1) -> {new_credits}")
         return {"status": "ok", "remaining_credits": new_credits}
     else:
         # Fallback if update_user_by_id failed to find the user by ID

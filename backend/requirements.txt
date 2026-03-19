@@ -10,4 +10,5 @@ imageio-ffmpeg
 aiofiles
 razorpay
 bcrypt
-PyJWT
+supabase
+python-dotenv
