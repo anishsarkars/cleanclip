@@ -30,6 +30,7 @@ export default function Home() {
   const [step, setStep] = useState("");
   const [showPaywall, setShowPaywall] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [upgrading, setUpgrading] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [guestUsage, setGuestUsage] = useState(0);
@@ -248,7 +249,8 @@ export default function Home() {
     }
 
     if (isSyncing || !userInfo) {
-      alert("Account syncing... Please wait a few seconds while we connect to the secure backend.");
+      setUpgrading(plan);
+      setTimeout(() => setUpgrading(null), 3000);
       return;
     }
 
@@ -328,7 +330,7 @@ export default function Home() {
         <div className="animate-fade-in">
           <HeroSection onFileSelected={handleFileSelected} />
           <HowItWorks />
-          <PricingSection onUpgrade={handleUpgrade} />
+          <PricingSection onUpgrade={handleUpgrade} upgrading={upgrading} />
         </div>
       )}
 
@@ -360,7 +362,7 @@ export default function Home() {
         <div className="animate-fade-in pt-16">
           <ResultSection originalUrl={originalUrl} processedUrl={processedUrl} fileName={selectedFile.name} onReset={handleReset} onDownload={handleDownload} />
           <div className="bg-gray-50">
-            <PricingSection onUpgrade={handleUpgrade} />
+            <PricingSection onUpgrade={handleUpgrade} upgrading={upgrading} />
           </div>
         </div>
       )}

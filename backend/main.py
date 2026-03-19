@@ -412,18 +412,18 @@ async def webhook(request: Request):
 # ──────────────────────────────────────────────
 jobs: Dict[str, dict] = {}
 rembg_session = None
-# Increase workers for much faster frame processing
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=(os.cpu_count() or 4) * 2)
+# Optimized for 512MB RAM: Max 2 workers to avoid OOM
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=min(os.cpu_count() or 2, 2))
 
 
 @app.on_event("startup")
 async def startup():
     global rembg_session
-    print("🔄 Loading ISNet model for ultra-high precision…")
+    print("🔄 Loading u2net model for 512MB RAM efficiency…")
     loop = asyncio.get_event_loop()
-    # isnet-general-use is usually the best performing for general background removal
-    rembg_session = await loop.run_in_executor(None, lambda: new_session("isnet-general-use"))
-    print("✅ High-class AI model ready.")
+    # u2net is the standard stable model for limited RAM environments
+    rembg_session = await loop.run_in_executor(None, lambda: new_session("u2net"))
+    print("✅ Memory-optimized AI model ready.")
 
 
 @app.get("/health")
@@ -590,8 +590,8 @@ async def _process_video(job: dict, input_path: Path, output_path: Path, plan: s
         frames.append(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
     cap.release()
 
-    # Faster chunks
-    chunk = 4 if plan == "guest" else (8 if plan == "free" else 16)
+    # Memory-safe chunks for 512MB environments
+    chunk = 2 if plan == "guest" else (4 if plan == "free" else 8)
     results = []
     loop = asyncio.get_event_loop()
     for i in range(0, len(frames), chunk):

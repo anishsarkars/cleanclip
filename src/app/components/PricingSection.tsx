@@ -61,18 +61,20 @@ const PLANS = [
 
 interface PricingSectionProps {
   onUpgrade?: (planId: string) => void;
+  upgrading?: string | null;
 }
 
-export default function PricingSection({ onUpgrade }: PricingSectionProps) {
-  const [upgrading, setUpgrading] = useState<string | null>(null);
+export default function PricingSection({ onUpgrade, upgrading: externalUpgrading }: PricingSectionProps) {
+  const [internalUpgrading, setInternalUpgrading] = useState<string | null>(null);
+  const upgrading = externalUpgrading || internalUpgrading;
 
   const handleUpgradeClick = async (id: string) => {
     if (id === "free" || !onUpgrade) return;
-    setUpgrading(id);
+    setInternalUpgrading(id);
     try {
       await onUpgrade(id);
     } finally {
-      setUpgrading(null);
+      setInternalUpgrading(null);
     }
   };
 
