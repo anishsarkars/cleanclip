@@ -13,3 +13,5 @@ temp/
 .u2net/
 .pytest_cache/
 *.log
+*.db
+hero_tmp_snapshot.txt

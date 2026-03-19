@@ -1,6 +1,5 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
 function hasValidSecretKey() {
   const sk = process.env.CLERK_SECRET_KEY;
@@ -14,7 +13,7 @@ function hasValidSecretKey() {
 
 export const proxy = hasValidSecretKey()
   ? clerkMiddleware()
-  : (_req: NextRequest) => NextResponse.next();
+  : () => NextResponse.next();
 
 export default proxy;
 
@@ -24,4 +23,3 @@ export const config = {
     "/((?!_next|.*\\..*).*)",
   ],
 };
-

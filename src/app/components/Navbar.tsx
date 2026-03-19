@@ -1,137 +1,48 @@
 "use client";
-import { useState, useEffect } from "react";
+
 import Link from "next/link";
 import { UserButton, useClerk, useUser } from "@clerk/nextjs";
 
-interface NavbarProps {
-  onAuthClick?: (mode: "login" | "signup") => void;
-  userInfo?: {
-    email: string;
-    credits: number;
-    plan: string;
-  } | null;
-  onLogout?: () => void;
-}
-
-export default function Navbar({ userInfo }: NavbarProps) {
-  const { openSignIn, openSignUp } = useClerk();
+export default function Navbar() {
   const { user } = useUser();
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", fn);
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
+  const { openSignIn, openSignUp } = useClerk();
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
-      scrolled ? "h-16 glass" : "h-20 bg-transparent"
-    }`}>
-      <div className="section-container h-full flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center no-underline group">
-          <span className="text-xl font-black tracking-tight text-gray-900 group-hover:text-black transition-colors">
-            Clean<span className="text-gray-400 group-hover:text-gray-600">clip</span>
-          </span>
+    <nav className="fixed inset-x-0 top-0 z-50 border-b border-black/5 bg-white/85 backdrop-blur-xl">
+      <div className="section-container flex h-18 items-center justify-between">
+        <Link href="/" className="text-[18px] font-semibold tracking-[-0.04em] text-zinc-950 no-underline">
+          CleanClip
         </Link>
 
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-8">
-          {[{ l: "How it works", h: "#how-it-works" }, { l: "Pricing", h: "#pricing" }].map(({ l, h }) => (
-            <a key={l} href={h} className="text-[13px] text-gray-500 font-medium no-underline hover:text-gray-900 transition-colors">
-              {l}
-            </a>
-          ))}
+        <div className="hidden items-center gap-8 md:flex">
+          <a href="#pricing" className="text-sm font-medium text-zinc-500 no-underline transition-colors hover:text-zinc-950">
+            Pricing
+          </a>
         </div>
 
-        {/* Auth & Desktop Actions */}
         <div className="flex items-center gap-3">
           {user ? (
-            <div className="flex items-center gap-4">
-               {userInfo && (
-                  <a 
-                    href="#pricing"
-                    className="hidden sm:flex items-center justify-center gap-1.5 bg-gray-50 border border-gray-200 px-3.5 py-1.5 rounded-full text-[11px] font-black text-gray-900 hover:bg-white transition-all shadow-sm"
-                  >
-                    <span className="opacity-70 text-[10px] leading-none mb-0.5">⚡</span> 
-                    <span className="leading-none uppercase tracking-tight">{userInfo.credits} {userInfo.plan === "free" ? "/ 10" : "left"}</span>
-                  </a>
-               )}
-              <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8 shadow-sm" } }} />
-            </div>
+            <UserButton appearance={{ elements: { userButtonAvatarBox: "h-9 w-9" } }} />
           ) : (
-            <div className="hidden sm:flex items-center gap-3">
-              <button 
-                onClick={() => openSignIn()} 
+            <>
+              <button
+                onClick={() => openSignIn()}
                 suppressHydrationWarning
-                className="text-[13px] font-medium text-gray-500 hover:text-gray-900 px-2 py-1 transition-colors cursor-pointer"
+                className="cursor-pointer rounded-full px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
               >
-                Log in
+                Login
               </button>
-              <button 
-                onClick={() => openSignUp()} 
+              <button
+                onClick={() => openSignUp()}
                 suppressHydrationWarning
-                className="text-[13px] font-bold bg-gray-900 text-white px-5 py-2 rounded-full hover:bg-black transition-all shadow-lg shadow-gray-200 cursor-pointer"
+                className="cursor-pointer rounded-full bg-zinc-950 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-black"
               >
-                Sign up
+                Signup
               </button>
-            </div>
-          )}
-
-          {/* Mobile Menu Toggle */}
-          <button 
-            className="md:hidden w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-full hover:bg-gray-100 transition-colors z-[110]"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <div className={`w-5 h-0.5 bg-gray-900 transition-all ${mobileMenuOpen ? "rotate-45 translate-y-2" : ""}`} />
-            <div className={`w-5 h-0.5 bg-gray-900 transition-all ${mobileMenuOpen ? "opacity-0" : ""}`} />
-            <div className={`w-5 h-0.5 bg-gray-900 transition-all ${mobileMenuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu Drawer */}
-      <div className={`fixed inset-0 bg-white z-[105] md:hidden transition-all duration-500 ease-in-out ${
-        mobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
-      }`}>
-        <div className="flex flex-col items-center justify-center h-full gap-8 p-6">
-          {[{ l: "How it works", h: "#how-it-works" }, { l: "Pricing", h: "#pricing" }].map(({ l, h }) => (
-            <a key={l} href={h} onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-gray-900 no-underline">
-              {l}
-            </a>
-          ))}
-          {!user && (
-            <div className="flex flex-col w-full gap-4 mt-8 max-w-xs">
-              <button 
-                onClick={() => { setMobileMenuOpen(false); openSignIn(); }} 
-                suppressHydrationWarning
-                className="w-full py-4 text-lg font-bold border border-gray-200 rounded-2xl text-gray-900"
-              >
-                Log in
-              </button>
-              <button 
-                onClick={() => { setMobileMenuOpen(false); openSignUp(); }} 
-                suppressHydrationWarning
-                className="w-full py-4 text-lg font-bold bg-gray-900 text-white rounded-2xl shadow-xl shadow-gray-200"
-              >
-                Get Started
-              </button>
-            </div>
-          )}
-          {user && userInfo && (
-            <div className="bg-gray-50 border border-gray-200 p-6 rounded-3xl w-full max-w-xs text-center">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-widest mb-1">Your Credits</p>
-              <p className="text-4xl font-black text-gray-900">{userInfo.credits}</p>
-              <p className="text-xs text-gray-400 mt-2">Plan: <span className="text-gray-600 font-bold uppercase">{userInfo.plan}</span></p>
-            </div>
+            </>
           )}
         </div>
       </div>
     </nav>
   );
 }
-
-
-

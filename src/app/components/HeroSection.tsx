@@ -1,151 +1,147 @@
 "use client";
+
 import { useCallback, useRef, useState } from "react";
 
 interface HeroSectionProps {
   onFileSelected: (file: File) => void;
-  isProcessing?: boolean;
+  helperText?: string | null;
 }
 
 const ACCEPTED = ["video/mp4", "video/quicktime", "image/gif", "video/webm"];
 
-export default function HeroSection({ onFileSelected, isProcessing = false }: HeroSectionProps) {
+export default function HeroSection({ onFileSelected, helperText }: HeroSectionProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const validate = (f: File) => {
-    if (!ACCEPTED.includes(f.type)) return "Use MP4, MOV, or GIF.";
-    if (f.size > 100 * 1024 * 1024) return "Max 100MB.";
+  const validate = (file: File) => {
+    if (!ACCEPTED.includes(file.type)) return "Use MP4, MOV, GIF, or WebM.";
+    if (file.size > 100 * 1024 * 1024) return "Maximum file size is 100MB.";
     return null;
   };
 
-  const handleFile = useCallback((f: File) => {
-    setError(null);
-    const e = validate(f);
-    if (e) { setError(e); return; }
-    onFileSelected(f);
-  }, [onFileSelected]);
+  const handleFile = useCallback(
+    (file: File) => {
+      const nextError = validate(file);
+      setError(nextError);
+      if (!nextError) onFileSelected(file);
+    },
+    [onFileSelected],
+  );
 
   return (
-    <section id="upload" className="w-full min-h-[90vh] pt-24 md:pt-32 pb-20 px-6 flex items-center justify-center overflow-hidden">
-      <div className="section-container grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+    <section
+      id="upload"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#fafafa_0%,#f4f4f5_100%)] px-6 pb-20 pt-32"
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(720px 240px at 50% 78%, rgba(0,0,0,0.045), transparent 70%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 z-0 w-full -translate-x-1/2 -translate-y-[58%] text-center text-[88px] font-[900] leading-none tracking-[-0.08em] text-black/[0.05] sm:text-[144px] md:text-[220px] lg:text-[320px]"
+      >
+        REMOVE
+      </div>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[220px] w-[220px] -translate-x-1/2 translate-y-10 rounded-full bg-black/[0.04] blur-[90px]"
+      />
 
-        {/* Left Column - Content */}
-        <div className="flex flex-col items-start gap-6 animate-fade-in mt-12 md:mt-16 lg:mt-0">
-          <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-            AI · Automatic · Free to start
-          </p>
+      <div className="relative z-10 mx-auto flex w-full max-w-[760px] flex-col items-center text-center">
+        <h1 className="mb-4 max-w-[680px] text-[34px] font-semibold tracking-[-0.05em] text-zinc-950 md:text-[48px]">
+          Remove video background in seconds
+        </h1>
 
-          <h1 className="text-[44px] md:text-[64px] lg:text-[72px] font-black leading-[1.05] tracking-tight text-gray-900 m-0">
-            Remove Video <br className="hidden md:block" /> Background <span className="text-gray-300">in seconds.</span>
-          </h1>
+        {helperText && (
+          <p className="mb-6 text-sm font-medium text-zinc-500">{helperText}</p>
+        )}
 
-          <p className="text-lg md:text-xl text-gray-500 leading-relaxed max-w-lg m-0 font-medium">
-            Upload any video or GIF. AI removes the background frame by frame. Export transparent WebM or swap in any background.
-          </p>
-
-          <div className="flex flex-wrap gap-2 items-center mt-2">
-            {["MP4, MOV, GIF, WebM", "Max 100MB", "High Quality"].map((tag) => (
-              <span key={tag} className="bg-gray-50 border border-gray-100 px-3.5 py-1.5 rounded-full text-gray-600 text-[13px] font-semibold">
-                {tag}
-              </span>
-            ))}
-          </div>
-
-          <div className="w-full h-px bg-gray-100 my-4" />
-
-          <div className="flex gap-10 md:gap-14">
-            {[{ v: "100%", l: "Automatic" }, { v: "Free", l: "to Start" }, { v: "< 90s", l: "Fast" }].map(({ v, l }) => (
-              <div key={l} className="flex flex-col">
-                <div className="text-2xl font-black text-gray-900 leading-tight">{v}</div>
-                <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mt-1">{l}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Column - Upload Card */}
-        <div className="flex justify-center relative animate-slide-in delay-200 lg:-mt-55">
+        <div className="w-full max-w-[540px] rounded-[28px] border border-black/8 bg-white/95 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.06)] backdrop-blur-sm">
           <div
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={(e) => {
               e.preventDefault();
               setIsDragging(false);
-              const f = e.dataTransfer.files[0];
-              if (f) handleFile(f);
+              const file = e.dataTransfer.files[0];
+              if (file) handleFile(file);
             }}
-            className="w-full max-w-[460px] bg-white rounded-[40px] p-6 shadow-2xl shadow-gray-200/80 border border-gray-50 relative group"
+            className={`flex min-h-[400px] flex-col items-center justify-center rounded-[22px] border px-8 py-10 text-center transition-all duration-200 md:px-12 md:py-14 ${
+              isDragging
+                ? "border-black/20 bg-zinc-50"
+                : "border-dashed border-black/12 bg-white"
+            }`}
           >
-            <div className={`border-2 border-dashed rounded-[32px] p-12 md:p-16 flex flex-col items-center text-center transition-all duration-300 ${isDragging ? "border-gray-900 bg-gray-50 scale-[0.98]" : "border-gray-200 bg-white"
-              }`}
-            >
-              {/* Animated SVG Icon */}
-              <div className="mb-10 relative group-hover:scale-110 transition-transform duration-500">
-                <svg width="100" height="85" viewBox="0 0 100 85" fill="none" className="overflow-visible">
-                  {/* Left Page (Video) */}
-                  <g transform="translate(18, 30) rotate(-15)" className="opacity-40">
-                    <path d="M-18 -26 L 6 -26 A 2 2 0 0 1 8 -24 L 8 -10 L 18 -10 L 18 20 A 2 2 0 0 1 16 22 L -18 22 A 2 2 0 0 1 -20 20 L -20 -24 A 2 2 0 0 1 -18 -26 Z" stroke="#374151" strokeWidth="2.5" fill="#fff" strokeLinejoin="round" />
-                    <circle cx="-5" cy="-2" r="6" stroke="#111827" strokeWidth="2" />
-                  </g>
-                  {/* Right Page (GIF) */}
-                  <g transform="translate(82, 30) rotate(15)" className="opacity-40">
-                    <path d="M-18 -26 L 6 -26 A 2 2 0 0 1 8 -24 L 8 -10 L 18 -10 L 18 20 A 2 2 0 0 1 16 22 L -18 22 A 2 2 0 0 1 -20 20 L -20 -24 A 2 2 0 0 1 -18 -26 Z" stroke="#374151" strokeWidth="2.5" fill="#fff" strokeLinejoin="round" />
-                    <path d="M-8 -8 L-2 -2 L-8 4" stroke="#111827" strokeWidth="2" strokeLinejoin="round" fill="none" />
-                  </g>
-                  {/* Center Page (Main) */}
-                  <g transform="translate(50, 42)">
-                    <path d="M-20 -28 L 8 -28 A 2 2 0 0 1 10 -26 L 10 -10 L 22 -10 L 22 24 A 2 2 0 0 1 20 26 L -20 26 A 2 2 0 0 1 -22 24 L -22 -26 A 2 2 0 0 1 -20 -28 Z" stroke="#1f2937" strokeWidth="2.5" fill="#fdfdfd" strokeLinejoin="round" className="shadow-sm" />
-                    <circle cx="-1" cy="0" r="10" stroke="#111827" strokeWidth="2.5" />
-                    <path d="M2 -1 L-2 2 L-2 -4 Z" fill="#111827" />
-                  </g>
-                </svg>
-              </div>
-
-              <h3 className="text-2xl md:text-3xl font-black text-gray-900 m-0 mb-3 leading-tight tracking-tight">
-                Drag & drop <br /> <span className="text-gray-400">videos or GIFs</span>
-              </h3>
-
-              <p className="text-[15px] text-gray-500 mb-10 font-medium">
-                or <button onClick={() => inputRef.current?.click()} suppressHydrationWarning className="text-gray-900 font-bold underline underline-offset-4 decoration-gray-300 hover:decoration-gray-900 transition-all cursor-pointer">browse files</button> on your device
-              </p>
-
-              <button
-                onClick={() => inputRef.current?.click()}
-                className={`w-full max-w-[260px] bg-gray-900 text-white font-bold py-4.5 rounded-2xl shadow-xl shadow-gray-200 hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-3 ${isProcessing ? "opacity-50 pointer-events-none" : ""}`}
+            <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-black/8 bg-zinc-50">
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                className="text-zinc-900"
               >
-                {isProcessing ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  "Upload Video"
-                )}
-              </button>
-
-              <input
-                ref={inputRef}
-                type="file"
-                accept="video/mp4,video/quicktime,image/gif,video/webm"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
-                className="hidden"
-              />
+                <path d="M12 16V7" strokeLinecap="round" />
+                <path d="M8.5 10.5 12 7l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
+                <rect x="4" y="4" width="16" height="16" rx="4" />
+              </svg>
             </div>
 
-            {error && (
-              <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-[90%] bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-2xl text-sm font-bold text-center shadow-xl animate-fade-in shadow-red-100/50">
-                ⚠️ {error}
-              </div>
-            )}
+            <h2 className="m-0 mb-3 text-[32px] font-black leading-[0.98] tracking-[-0.05em] text-zinc-950 md:text-[42px]">
+              Drag & drop
+              <br />
+              <span className="text-zinc-400">videos or GIFs</span>
+            </h2>
+
+            <p className="mb-8 max-w-[320px] text-[15px] font-medium leading-6 text-zinc-500">
+              or{" "}
+              <button
+                onClick={() => inputRef.current?.click()}
+                suppressHydrationWarning
+                className="cursor-pointer font-semibold text-zinc-950 underline decoration-black/15 underline-offset-4 hover:decoration-black"
+              >
+                browse files
+              </button>{" "}
+              on your device
+            </p>
+
+            <button
+              onClick={() => inputRef.current?.click()}
+              suppressHydrationWarning
+              className="cursor-pointer rounded-full bg-zinc-950 px-7 py-3.5 text-[14px] font-semibold text-white transition-all hover:bg-black active:scale-[0.98]"
+            >
+              Upload Video
+            </button>
+
+            <input
+              ref={inputRef}
+              type="file"
+              accept="video/mp4,video/quicktime,image/gif,video/webm"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFile(file);
+              }}
+              className="hidden"
+            />
           </div>
 
-          {/* Decorative blurred blobs */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-gray-100 rounded-full blur-3xl opacity-50 -z-10" />
-          <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-gray-50 rounded-full blur-3xl opacity-50 -z-10" />
+          {error && (
+            <div className="animate-fade-in mt-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600">
+              {error}
+            </div>
+          )}
         </div>
       </div>
     </section>
   );
 }
-

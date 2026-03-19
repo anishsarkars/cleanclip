@@ -5,12 +5,5 @@ rembg[cpu]
 Pillow
 numpy
 opencv-python-headless
-imageio
 imageio-ffmpeg
-aiofiles
-razorpay
-bcrypt
-supabase
 python-dotenv
-
-httpx
