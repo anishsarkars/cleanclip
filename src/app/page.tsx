@@ -34,6 +34,7 @@ export default function Home() {
   const [token, setToken] = useState<string | null>(null);
   const [guestUsage, setGuestUsage] = useState(0);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const { user, isLoaded } = useUser();
   const { openSignIn } = useClerk();
@@ -58,19 +59,34 @@ export default function Home() {
     initGuest();
   }, []);
 
-  // 1b. Clerk Auth Sync
+  // 1b. Clerk Auth Sync with Retries
   useEffect(() => {
-    if (isLoaded && user) {
-      fetch(`${API}/auth/clerk-sync`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: user.id,
-          email: user.primaryEmailAddress?.emailAddress || "",
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    const syncWithBackend = async () => {
+      if (!isLoaded || !user) {
+        setUserInfo(null);
+        setToken(null);
+        localStorage.removeItem("cleanclip_token");
+        setIsSyncing(false);
+        return;
+      }
+
+      setIsSyncing(true);
+      try {
+        const res = await fetch(`${API}/auth/clerk-sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: user.id,
+            email: user.primaryEmailAddress?.emailAddress || "",
+          })
+        });
+
+        if (!res.ok) throw new Error("Sync failed");
+        
+        const data = await res.json();
         setToken(data.access_token);
         localStorage.setItem("cleanclip_token", data.access_token);
         setUserInfo({
@@ -79,16 +95,22 @@ export default function Home() {
           plan: data.plan,
           credits: data.credits
         });
+        setIsSyncing(false);
         if (data.plan === "none" && !showOnboarding) {
           setShowOnboarding(true);
         }
-      })
-      .catch(console.error);
-    } else if (isLoaded && !user) {
-      setUserInfo(null);
-      setToken(null);
-      localStorage.removeItem("cleanclip_token");
-    }
+      } catch (err) {
+        console.error("Sync error:", err);
+        if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(syncWithBackend, 2000 * retryCount); // Exponential backoff
+        } else {
+          setIsSyncing(false);
+        }
+      }
+    };
+
+    syncWithBackend();
   }, [isLoaded, user]);
 
   // 2. Payment Integration
@@ -225,8 +247,8 @@ export default function Home() {
       return;
     }
 
-    if (!userInfo) {
-      alert("Backend synchronization is still in progress. Please try again in 5 seconds.");
+    if (isSyncing || !userInfo) {
+      alert("Account syncing... Please wait a few seconds while we connect to the secure backend.");
       return;
     }
 

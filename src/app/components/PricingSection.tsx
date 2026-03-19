@@ -6,7 +6,7 @@ const PLANS = [
     id: "free",
     name: "Free",
     label: "FOR CASUAL USERS",
-    desc: "15 videos every month. Perfect for hobbyists.",
+    desc: "10 videos every month. Perfect for hobbyists.",
     price: "₹0",
     period: "/mo",
     cta: "Current Plan",

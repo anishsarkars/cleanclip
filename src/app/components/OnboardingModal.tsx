@@ -60,7 +60,7 @@ export default function OnboardingModal({ token, onPaymentStart, onSuccess }: On
       if (!res.ok) throw new Error(data?.detail || data?.message || "Could not activate Free plan");
 
       const plan = data.plan ?? "free";
-      const credits = data.credits ?? data.remaining_credits ?? 15;
+      const credits = data.credits ?? data.remaining_credits ?? 10;
       onSuccess(plan, credits);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not activate Free plan";

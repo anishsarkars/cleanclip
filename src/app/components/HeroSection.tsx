@@ -26,11 +26,11 @@ export default function HeroSection({ onFileSelected }: HeroSectionProps) {
   }, [onFileSelected]);
 
   return (
-    <section id="upload" className="w-full min-h-[90vh] pt-16 pb-20 px-6 flex items-center justify-center overflow-hidden">
+    <section id="upload" className="w-full min-h-[90vh] pt-24 md:pt-32 pb-20 px-6 flex items-center justify-center overflow-hidden">
       <div className="section-container grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
 
         {/* Left Column - Content */}
-        <div className="flex flex-col items-start gap-6 animate-fade-in">
+        <div className="flex flex-col items-start gap-6 animate-fade-in mt-12 md:mt-16 lg:mt-0">
           <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
             AI · Automatic · Free to start
           </p>
@@ -64,7 +64,7 @@ export default function HeroSection({ onFileSelected }: HeroSectionProps) {
         </div>
 
         {/* Right Column - Upload Card */}
-        <div className="flex justify-center relative animate-slide-in delay-200 lg:-mt-12">
+        <div className="flex justify-center relative animate-slide-in delay-200 lg:-mt-55">
           <div
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
