@@ -208,10 +208,16 @@ export default function Home() {
         setShowPaywall(false);
 
         if (plan === "monthly" || plan === "yearly") {
-          const checkoutUrl =
-            plan === "monthly"
-              ? "https://checkout.dodopayments.com/buy/pdt_0NalSjZWHhamGs4oYJvTe?quantity=99"
-              : "https://checkout.dodopayments.com/buy/pdt_0NalSUMsJzvscQl8QNvVM?quantity=99";
+          const productId = 
+            plan === "monthly" 
+              ? "pdt_0NalSjZWHhamGs4oYJvTe" 
+              : "pdt_0NalSUMsJzvscQl8QNvVM";
+          
+          // Using a cleaner checkout URL without quantity=99
+          // We also append the clerk_user_id as a metadata parameter if supported by Dodo,
+          // but for now, we just fix the broken quantity and ensure it's a valid checkout.
+          const returnUrl = encodeURIComponent(`${window.location.origin}`);
+          const checkoutUrl = `https://checkout.dodopayments.com/buy/${productId}?client_reference_id=${user.id}&return_url=${returnUrl}`;
           window.location.href = checkoutUrl;
         }
       } catch (error) {

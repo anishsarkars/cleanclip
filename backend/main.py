@@ -6,6 +6,7 @@ import shutil
 import sqlite3
 import subprocess
 import uuid
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,13 +14,16 @@ from typing import Any
 
 import cv2
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Request, UploadFile, Header
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from PIL import Image
 from pydantic import BaseModel
 from rembg import new_session, remove
+import hashlib
+import hmac
 import imageio_ffmpeg
+import json
 
 load_dotenv()
 
@@ -180,9 +184,11 @@ def _encode_output(frames_dir: Path, fps: float, output_path: Path) -> None:
             "-auto-alt-ref",
             "0",
             "-crf",
-            "28",
+            "25",
             "-b:v",
             "0",
+            "-metadata:s:v:0",
+            "alpha_mode=1",
             str(output_path),
         ]
     )
@@ -442,9 +448,19 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
 async def startup() -> None:
     global rembg_session
     init_db()
-    loop = asyncio.get_running_loop()
-    rembg_session = await loop.run_in_executor(executor, lambda: new_session("u2net"))
-
+    print("Initializing rembg session...")
+    try:
+        loop = asyncio.get_running_loop()
+        rembg_session = await loop.run_in_executor(executor, lambda: new_session("isnet-general-use"))
+        print("rembg session (isnet-general-use) initialized successfully.")
+    except Exception as e:
+        print(f"Failed to initialize isnet-general-use, falling back to u2net: {e}")
+        try:
+            rembg_session = await loop.run_in_executor(executor, lambda: new_session("u2net"))
+            print("rembg session (u2net) initialized successfully.")
+        except Exception as e2:
+            print(f"Failed to initialize any rembg session: {e2}")
+            rembg_session = None
 
 @app.get("/health")
 def health() -> dict[str, Any]:
@@ -553,3 +569,41 @@ def get_result(job_id: str) -> FileResponse:
     if not path.exists():
         raise HTTPException(status_code=404, detail="Result file missing.")
     return FileResponse(path, media_type="video/webm", filename=path.name)
+
+
+@app.post("/webhook/dodopayments")
+async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -> JSONResponse:
+    body = await request.body()
+    secret = os.getenv("DODO_SECRET_KEY", "")
+    
+    # Basic signature validation if secret is provided
+    if secret and x_dodo_signature:
+        expected_sig = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected_sig, x_dodo_signature):
+            return JSONResponse({"status": "error", "message": "Invalid signature"}, status_code=401)
+            
+    try:
+        data = json.loads(body)
+        event_type = data.get("type")
+        payload = data.get("data", {})
+        
+        # In DodoPayments, customer_reference_id or client_reference_id is often used
+        clerk_user_id = payload.get("client_reference_id") or payload.get("customer_reference_id")
+        
+        if event_type == "payment.succeeded" and clerk_user_id:
+            # Detect plan from product id
+            product_id = payload.get("product_id")
+            plan = "none"
+            if product_id == os.getenv("DODO_PRODUCT_ID_MONTHLY"):
+                plan = "monthly"
+            elif product_id == os.getenv("DODO_PRODUCT_ID_YEARLY"):
+                plan = "yearly"
+                
+            if plan != "none":
+                set_user_plan(clerk_user_id, payload.get("customer_email", ""), plan)
+                print(f"Plan updated to {plan} for user {clerk_user_id} via webhook.")
+                
+        return JSONResponse({"status": "ok"})
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=400)
