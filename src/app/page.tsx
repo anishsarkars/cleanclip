@@ -10,6 +10,7 @@ import PricingSection from "./components/PricingSection";
 import PaywallModal from "./components/PaywallModal";
 import OnboardingModal from "./components/OnboardingModal";
 import Footer from "./components/Footer";
+import FilesSection from "./components/FilesSection";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const GUEST_USAGE_KEY = "cleanclip_guest_usage";
@@ -21,6 +22,13 @@ interface UserInfo {
   email: string;
   plan: string;
   credits: number;
+}
+
+interface RecentFile {
+  id: string;
+  filename: string;
+  file_url: string;
+  created_at: string;
 }
 
 export default function Home() {
@@ -43,6 +51,7 @@ export default function Home() {
   const [processedUrl, setProcessedUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [jobId, setJobId] = useState<string | null>(null);
+  const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -114,6 +123,20 @@ export default function Home() {
     syncWithBackend();
   }, [isLoaded, user]);
 
+  const fetchRecentFiles = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API}/my-files`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) setRecentFiles(await res.json());
+    } catch (err) {}
+  }, [token]);
+
+  useEffect(() => {
+    fetchRecentFiles();
+  }, [fetchRecentFiles]);
+
   const stopPolling = () => {
     if (pollRef.current) {
       clearInterval(pollRef.current);
@@ -134,7 +157,7 @@ export default function Home() {
 
         if (data.status === "done") {
           stopPolling();
-
+          fetchRecentFiles();
           // Refresh user data if logged in
           if (token) {
             const userRes = await fetch(`${API}/auth/me`, {
@@ -254,7 +277,7 @@ export default function Home() {
 
     if (plan === "free") {
       try {
-        const res = await fetch(`${API}/payments/create-checkout`, {
+        const res = await fetch(`${API}/auth/select-plan`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
@@ -266,6 +289,7 @@ export default function Home() {
         if (res.ok) {
           setUserInfo(prev => prev ? { ...prev, plan: "free", credits: data.credits } : null);
           setShowOnboarding(false);
+          setAppState("idle");
         }
       } catch (err) {}
       return;
@@ -318,9 +342,36 @@ export default function Home() {
 
       <Navbar userInfo={userInfo} />
 
-      {appState === "idle" && (
+      {user && userInfo?.plan === "none" ? (
+        <div className="flex flex-col items-center justify-center py-20 px-4 text-center max-w-4xl mx-auto min-h-[60vh]">
+            <div className="w-20 h-20 bg-gray-50 rounded-[32px] flex items-center justify-center mb-8 border border-gray-100 shadow-sm">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-900">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <h2 className="text-4xl font-black mb-4 font-outfit text-gray-900 tracking-tight text-center">Activate Your Workspace</h2>
+            <p className="text-gray-500 mb-12 text-lg max-w-lg leading-relaxed font-medium">To maintain our high-quality AI processing and secure cloud storage, please select a plan to get started.</p>
+            <button 
+                onClick={() => setShowOnboarding(true)}
+                className="bg-gray-900 text-white px-10 py-5 rounded-[24px] font-black text-lg hover:bg-black transition-all shadow-2xl shadow-gray-200 active:scale-95 flex items-center gap-3"
+            >
+                View Plans & Get Started
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                </svg>
+            </button>
+        </div>
+      ) : (
         <div className="animate-fade-in">
-          <HeroSection onFileSelected={handleFileSelected} />
+          <HeroSection 
+            onFileSelected={handleFileSelected} 
+            isProcessing={appState === "processing"} 
+          />
+
+          {userInfo && recentFiles.length > 0 && (
+            <FilesSection files={recentFiles} />
+          )}
+
           <HowItWorks />
           <PricingSection onUpgrade={handleUpgrade} upgrading={upgrading} />
         </div>

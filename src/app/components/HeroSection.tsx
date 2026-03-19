@@ -3,11 +3,12 @@ import { useCallback, useRef, useState } from "react";
 
 interface HeroSectionProps {
   onFileSelected: (file: File) => void;
+  isProcessing?: boolean;
 }
 
 const ACCEPTED = ["video/mp4", "video/quicktime", "image/gif", "video/webm"];
 
-export default function HeroSection({ onFileSelected }: HeroSectionProps) {
+export default function HeroSection({ onFileSelected, isProcessing = false }: HeroSectionProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -111,10 +112,16 @@ export default function HeroSection({ onFileSelected }: HeroSectionProps) {
 
               <button
                 onClick={() => inputRef.current?.click()}
-                suppressHydrationWarning
-                className="w-full max-w-[260px] bg-gray-900 text-white font-bold py-4.5 rounded-2xl shadow-xl shadow-gray-200 hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                className={`w-full max-w-[260px] bg-gray-900 text-white font-bold py-4.5 rounded-2xl shadow-xl shadow-gray-200 hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-3 ${isProcessing ? "opacity-50 pointer-events-none" : ""}`}
               >
-                Upload Video
+                {isProcessing ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  "Upload Video"
+                )}
               </button>
 
               <input

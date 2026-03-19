@@ -287,30 +287,39 @@ async def create_checkout(body: PlanSelection, authorization: str = Header(...))
             print(f"❌ Payment Error: {e}")
             raise HTTPException(status_code=500, detail="Internal Payment Error")
 
-# ──────────────────────────────────────────────
-# Razorpay Payment Verification
-# ──────────────────────────────────────────────
-@app.post("/payments/verify")
-def verify_payment(body: PaymentVerification):
-    try:
-        rzp_client.utility.verify_payment_signature({
-            "razorpay_order_id": body.razorpay_order_id,
-            "razorpay_payment_id": body.razorpay_payment_id,
-            "razorpay_signature": body.razorpay_signature,
-        })
-        order = rzp_client.order.fetch(body.razorpay_order_id)
-        user_id = order["notes"]["user_id"]
-        plan = order["notes"]["plan"]
-        credits = PLAN_CREDITS.get(plan, 50)
-        update_user_by_id(user_id, {
-            "plan": plan,
+@app.post("/auth/select-plan")
+def select_plan(body: PlanSelection, authorization: str = Header(...)):
+    """Allow user to select 'free' plan and get started."""
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    if body.plan == "free":
+        credits = PLAN_CREDITS["free"]
+        update_user_by_id(user["clerk_user_id"], {
+            "plan": "free",
             "credits_remaining": credits,
             "credits_total": credits,
             "last_reset_date": datetime.now().isoformat(),
         })
-        return {"status": "success", "plan": plan, "credits": credits}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Payment verification failed: {e}")
+        return {"status": "success", "plan": "free", "credits": credits}
+    
+    raise HTTPException(status_code=400, detail="Only free plan selection supported via API")
+
+@app.get("/my-files")
+def get_my_files(authorization: str = Header(...)):
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Get files from the last 24 hours
+    limit = datetime.now() - timedelta(hours=24)
+    res = supabase.table("processed_files").select("*")\
+        .eq("user_id", user["clerk_user_id"])\
+        .gte("created_at", limit.isoformat())\
+        .order("created_at", desc=True).execute()
+        
+    return res.data
 
 # ──────────────────────────────────────────────
 # Razorpay Webhook (optional — for subscription renewal)
@@ -420,9 +429,30 @@ async def startup():
     global rembg_session
     print("🔄 Loading u2net model for 512MB RAM efficiency…")
     loop = asyncio.get_event_loop()
-    # u2net is the standard stable model for limited RAM environments
     rembg_session = await loop.run_in_executor(None, lambda: new_session("u2net"))
     print("✅ Memory-optimized AI model ready.")
+    
+    # Start 24h cleanup task
+    asyncio.create_task(cleanup_old_files())
+
+async def cleanup_old_files():
+    """Delete files and DB records older than 24 hours."""
+    while True:
+        try:
+            print("🧹 Running 24h cleanup task...")
+            cutoff = datetime.now() - timedelta(hours=24)
+            
+            # 1. Delete from DB
+            supabase.table("jobs").delete().lt("created_at", cutoff.isoformat()).execute()
+            
+            # 2. Delete from Local Disk
+            for f in OUTPUT_DIR.glob("*"):
+                if f.stat().st_mtime < cutoff.timestamp():
+                    f.unlink()
+            print("✅ Cleanup complete.")
+        except Exception as e:
+            print(f"❌ Cleanup error: {e}")
+        await asyncio.sleep(3600)  # Run every hour
 
 
 @app.get("/health")

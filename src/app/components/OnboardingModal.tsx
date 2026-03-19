@@ -19,7 +19,7 @@ export default function OnboardingModal({ token, onPaymentStart, onSuccess }: On
       {
         id: "free",
         name: "Free",
-        desc: "10 videos / month",
+        desc: "15 videos / month",
         price: "₹0",
         meta: "480p SD · Watermark",
         primary: false,
@@ -59,13 +59,12 @@ export default function OnboardingModal({ token, onPaymentStart, onSuccess }: On
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.detail || data?.message || "Could not activate Free plan");
 
-      const plan = data.plan ?? "free";
-      const credits = data.credits ?? data.remaining_credits ?? 10;
-      onSuccess(plan, credits);
+      const credits = data.credits ?? data.remaining_credits ?? 15;
+      onSuccess("free", credits);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not activate Free plan";
       setError(`${msg}. Activating local free plan...`);
-      setTimeout(() => onSuccess("free", 10), 1500);
+      setTimeout(() => onSuccess("free", 15), 1500);
     } finally {
       setBusy(null);
     }
@@ -174,5 +173,3 @@ export default function OnboardingModal({ token, onPaymentStart, onSuccess }: On
     </div>
   );
 }
-
-

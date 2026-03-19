@@ -146,7 +146,7 @@ export default function PricingSection({ onUpgrade, upgrading: externalUpgrading
               {/* CTA */}
               <button
                 onClick={() => handleUpgradeClick(p.id)}
-                disabled={upgrading === p.id || p.id === "free"}
+                disabled={upgrading === p.id}
                 suppressHydrationWarning
                 className={`w-full py-4 rounded-2xl text-[15px] font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${
                   p.dark 
@@ -154,7 +154,7 @@ export default function PricingSection({ onUpgrade, upgrading: externalUpgrading
                   : "bg-gray-50 text-gray-900 border border-gray-100 hover:bg-white hover:border-gray-900"
                 } ${upgrading && upgrading !== p.id ? "opacity-50" : "opacity-100"}`}
               >
-                {upgrading === p.id ? "Connecting..." : p.cta}
+                {upgrading === p.id ? "Connecting..." : (p.id === "free" ? "Get Started" : p.cta)}
               </button>
             </div>
           ))}
