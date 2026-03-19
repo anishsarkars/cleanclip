@@ -39,7 +39,15 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
+
+def get_real_ip(request: Request) -> str:
+    """Extract real user IP from HuggingFace/Vercel proxies."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host or "127.0.0.1"
 
 # Supabase Config
 SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
@@ -429,7 +437,7 @@ async def remove_bg(
     file: UploadFile = File(...),
     authorization: str = Header(None),
 ):
-    ip = request.client.host or "127.0.0.1"
+    ip = get_real_ip(request)
     user = get_current_user(authorization) if authorization else None
 
     # ── Access Control ──
