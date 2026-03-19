@@ -3,7 +3,7 @@
 interface ProcessingScreenProps {
   fileName: string;
   progress: number;
-  step?: string;   // real step text from backend API
+  step?: string;
 }
 
 const DOTS = [0, 15, 35, 55, 75, 90];
@@ -12,91 +12,78 @@ export default function ProcessingScreen({ fileName, progress, step }: Processin
   const eta = Math.max(0, Math.round(((100 - progress) / 100) * 90));
 
   return (
-    <section style={{
-      minHeight: "100vh",
-      background: "#fdfdfc",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "80px 24px 40px",
-    }}>
-      <div style={{ maxWidth: 360, width: "100%", textAlign: "center" }}>
+    <section className="min-h-screen bg-white flex items-center justify-center p-6 animate-fade-in">
+      <div className="max-w-sm w-full text-center">
 
         {/* Spinning ring + icon */}
-        <div style={{ position: "relative", width: 72, height: 72, margin: "0 auto 28px" }}>
-          <svg
-            style={{ width: "100%", height: "100%", animation: "spin 1.8s linear infinite" }}
-            viewBox="0 0 72 72"
-            fill="none"
-          >
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-            <circle cx="36" cy="36" r="30" stroke="#e5e7eb" strokeWidth="4"/>
-            <path d="M36 6A30 30 0 0 1 66 36" stroke="#111827" strokeWidth="4" strokeLinecap="round"/>
+        <div className="relative w-20 h-20 mx-auto mb-10">
+          <svg className="w-full h-full animate-spin text-gray-900" viewBox="0 0 72 72" fill="none">
+            <circle cx="36" cy="36" r="30" className="stroke-gray-100" strokeWidth="4"/>
+            <path d="M36 6A30 30 0 0 1 66 36" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
           </svg>
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-900">
               <polygon points="23 7 16 12 23 17 23 7"/>
               <rect x="1" y="5" width="15" height="14" rx="2"/>
             </svg>
           </div>
         </div>
 
-        <h2 style={{ fontSize: 22, fontWeight: 900, color: "#111827", margin: "0 0 6px" }}>
-          AI is working…
+        <h2 className="text-2xl font-black text-gray-900 mb-2">
+          AI is working...
         </h2>
 
-        <p style={{ fontSize: 12, color: "#9ca3af", fontFamily: "monospace", margin: "0 0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <p className="text-[13px] text-gray-400 font-medium mb-1 truncate px-4">
           {fileName}
         </p>
 
-        <p style={{ fontSize: 12, color: "#9ca3af", margin: "0 0 28px" }}>
-          {progress < 99 ? `~${eta}s remaining` : "Almost done…"}
+        <p className="text-[13px] text-gray-500 font-bold mb-8">
+          {progress < 99 ? `~${eta}s remaining` : "Almost done..."}
         </p>
 
         {/* Progress bar */}
-        <div style={{ height: 6, background: "#e5e7eb", borderRadius: 50, overflow: "hidden", marginBottom: 10 }}>
+        <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden mb-3 shadow-inner">
           <div
-            id="progress-bar"
-            style={{
-              height: "100%",
-              background: "#111827",
-              borderRadius: 50,
-              width: `${progress}%`,
-              transition: "width 0.6s ease",
-            }}
+            className="h-full bg-gray-900 rounded-full transition-all duration-700 ease-out shadow-[0_0_12px_rgba(0,0,0,0.1)]"
+            style={{ width: `${progress}%` }}
           />
         </div>
 
         {/* Step + percent */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <span id="step-label" style={{ fontSize: 12, color: "#6b7280", textAlign: "left", maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {step || "Processing…"}
+        <div className="flex justify-between items-center mb-10">
+          <span className="text-[12px] font-bold text-gray-400 uppercase tracking-wider truncate max-w-[200px]">
+            {step || "Processing..."}
           </span>
-          <span id="progress-pct" style={{ fontSize: 12, fontWeight: 800, color: "#111827", flexShrink: 0, marginLeft: 8 }}>
+          <span className="text-[13px] font-black text-gray-900 leading-none">
             {progress}%
           </span>
         </div>
 
         {/* Progress dots */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <div className="flex items-center justify-center gap-2">
           {DOTS.map((threshold, i) => (
             <div
               key={i}
-              style={{
-                borderRadius: 50,
-                background: progress >= threshold ? "#111827" : "#e5e7eb",
-                width: progress >= threshold ? 20 : 6,
-                height: 6,
-                transition: "all 0.3s ease",
-              }}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                progress >= threshold ? "bg-gray-900 w-8" : "bg-gray-100 w-2"
+              }`}
             />
           ))}
         </div>
 
-        <p style={{ marginTop: 28, fontSize: 11, color: "#d1d5db" }}>
-          Processing takes 30s–5min depending on video length and frame count
-        </p>
+        <div className="mt-12 p-6 bg-gray-50 rounded-3xl border border-gray-100 flex items-center gap-4 text-left">
+          <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-400">
+               <circle cx="12" cy="12" r="10"/>
+               <path d="M12 16v-4M12 8h.01"/>
+            </svg>
+          </div>
+          <p className="text-[11px] font-medium text-gray-400 leading-relaxed m-0">
+            Processing depends on video length. Shorter videos are faster. Please don't close this tab.
+          </p>
+        </div>
       </div>
     </section>
   );
 }
+

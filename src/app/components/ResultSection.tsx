@@ -21,7 +21,6 @@ export default function ResultSection({ originalUrl, processedUrl, fileName, onR
   const [bgOption, setBgOption] = useState<BgOption>("transparent");
   const [bgColor, setBgColor] = useState("#3b82f6");
   const [bgImage, setBgImage] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,11 +35,9 @@ export default function ResultSection({ originalUrl, processedUrl, fileName, onR
   );
 
   const onMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
     handleSliderMove(e.clientX);
     const move = (ev: MouseEvent) => handleSliderMove(ev.clientX);
     const up = () => {
-      setIsDragging(false);
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
     };
@@ -68,210 +65,166 @@ export default function ResultSection({ originalUrl, processedUrl, fileName, onR
     }
   };
 
-  const outputName = fileName.replace(/\.[^.]+$/, "_no_bg.webm");
-
   return (
-    <section style={{ padding: "64px 0", background: "#fdfdfc" }}>
+    <section className="py-20 md:py-24 bg-white animate-fade-in">
       <div className="section-container">
         
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32 }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-12">
           <div>
-            <h2 style={{ fontSize: 28, fontWeight: 900, color: "#111827", margin: 0 }}>Background removed ✓</h2>
-            <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 4 }}>Drag the slider to compare</p>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 m-0">Background removed ✓</h2>
+            <p className="text-gray-400 font-medium mt-2">Compare results and customize background</p>
           </div>
           <button
-            id="new-video-btn"
             onClick={onReset}
-            style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, color: "#6b7280", border: "1px solid #e5e7eb", borderRadius: 50, background: "#fff", cursor: "pointer", fontFamily: "inherit" }}
+            className="flex items-center gap-2.5 px-6 py-2.5 text-[13px] font-bold text-gray-500 border border-gray-100 rounded-full hover:bg-gray-50 hover:text-gray-900 transition-all cursor-pointer shadow-sm"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M1 4v6h6M23 20v-6h-6" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            New video
+            Upload New
           </button>
         </div>
 
         {/* Before/After slider */}
         <div
-          id="before-after-slider"
           ref={containerRef}
           onMouseDown={onMouseDown}
           onTouchStart={onTouchStart}
-          style={{
-            position: "relative",
-            width: "100%",
-            aspectRatio: "16/9",
-            borderRadius: 20,
-            overflow: "hidden",
-            background: "#fff",
-            cursor: "col-resize",
-            boxShadow: "0 20px 50px rgba(0,0,0,0.1)",
-          }}
+          className="relative w-full aspect-video rounded-[32px] md:rounded-[40px] overflow-hidden bg-gray-50 cursor-col-resize shadow-2xl shadow-gray-200 group border-8 border-white"
         >
           {/* "Before" — original */}
           <video
             src={originalUrl}
-            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover" }}
+            className="absolute inset-0 w-full h-full object-cover"
             autoPlay loop muted playsInline
           />
 
           {/* "After" — processed */}
           <div
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              height: "100%",
-              width: `${sliderPos}%`,
-              overflow: "hidden",
-              zIndex: 10,
-            }}
+            className="absolute inset-0 h-full overflow-hidden z-10"
+            style={{ width: `${sliderPos}%` }}
           >
             {/* Background layer */}
             <div
+              className={`absolute inset-0 ${bgOption === "transparent" ? "checker" : ""}`}
               style={{
-                position: "absolute",
-                inset: 0,
-                ...(bgOption === "transparent"
-                  ? {}
-                  : bgOption === "color"
-                  ? { background: bgColor }
-                  : bgImage
-                  ? { backgroundImage: `url(${bgImage})`, backgroundSize: "cover", backgroundPosition: "center" }
-                  : {}),
+                ...(bgOption === "color" ? { background: bgColor } : {}),
+                ...(bgOption === "image" && bgImage ? { backgroundImage: `url(${bgImage})`, backgroundSize: "cover", backgroundPosition: "center" } : {}),
               }}
             />
-            {bgOption === "transparent" && (
-              <div className="checker" style={{ position: "absolute", inset: 0 }} />
-            )}
             <video
               src={processedUrl}
-              style={{ position: "absolute", top: 0, left: 0, width: "100vw", height: "100%", objectFit: "cover" }}
+              className="absolute inset-0 object-cover"
+              style={{ width: `${100 * (100 / sliderPos)}%`, maxWidth: "none" }}
               autoPlay loop muted playsInline
             />
           </div>
 
-          {/* Divider line */}
+          {/* Divider line & handle */}
           <div
-            style={{ position: "absolute", top: 0, bottom: 0, left: `${sliderPos}%`, width: 2, background: "#fff", zIndex: 20, boxShadow: "0 0 10px rgba(0,0,0,0.3)" }}
-          />
-
-          {/* Drag handle */}
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: `${sliderPos}%`,
-              transform: "translate(-50%, -50%)",
-              width: 36,
-              height: 36,
-              borderRadius: "50%",
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 30,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            }}
+            className="absolute top-0 bottom-0 z-20 w-1 bg-white shadow-[0_0_15px_rgba(0,0,0,0.3)]"
+            style={{ left: `${sliderPos}%` }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="2.5">
-              <path d="M9 18l-6-6 6-6M15 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-xl flex items-center justify-center border-4 border-white active:scale-95 transition-transform">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="3">
+                <path d="M9 18l-6-6 6-6M15 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
           </div>
 
           {/* Labels */}
-          <div style={{ position: "absolute", top: 12, left: 12, padding: "2px 10px", borderRadius: 50, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 10, fontWeight: 700, backdropFilter: "blur(4px)", zIndex: 20 }}>Before</div>
-          <div style={{ position: "absolute", top: 12, right: 12, padding: "2px 10px", borderRadius: 50, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 10, fontWeight: 700, backdropFilter: "blur(4px)", zIndex: 20 }}>After</div>
+          <div className="absolute top-6 left-6 px-4 py-1.5 rounded-full bg-black/40 text-white text-[10px] font-black uppercase tracking-widest backdrop-blur-md z-30">Before</div>
+          <div className="absolute top-6 right-6 px-4 py-1.5 rounded-full bg-black/40 text-white text-[10px] font-black uppercase tracking-widest backdrop-blur-md z-30">After</div>
         </div>
 
-        {/* Controls */}
-        <div style={{ marginTop: 24, padding: 24, borderRadius: 20, background: "#fff", border: "1px solid #e5e7eb" }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: "#111827", marginBottom: 16 }}>Select Background</p>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
-            {(["transparent", "color", "image"] as BgOption[]).map((opt) => (
-              <button
-                key={opt}
-                onClick={() => setBgOption(opt)}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: 50,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  border: "none",
-                  fontFamily: "inherit",
-                  ...(bgOption === opt ? { background: "#111827", color: "#fff" } : { background: "#f3f4f6", color: "#6b7280" }),
-                }}
-              >
-                {opt === "transparent" ? "✨ Transparent" : opt === "color" ? "🎨 Color" : "🖼 Image"}
-              </button>
-            ))}
+        {/* Bottom Controls Grid */}
+        <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Background Selector */}
+          <div className="lg:col-span-2 p-8 rounded-[32px] bg-gray-50 border border-gray-100">
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-6">Customize Background</h3>
+            
+            <div className="flex flex-wrap gap-3 mb-8">
+              {(["transparent", "color", "image"] as BgOption[]).map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => setBgOption(opt)}
+                  className={`px-6 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+                    bgOption === opt 
+                    ? "bg-gray-900 text-white shadow-lg shadow-gray-200 scale-105" 
+                    : "bg-white text-gray-500 border border-gray-100 hover:border-gray-300"
+                  }`}
+                >
+                  {opt === "transparent" ? "✨ Transparent" : opt === "color" ? "🎨 Solid Color" : "🖼 Custom Image"}
+                </button>
+              ))}
+            </div>
+
+            {bgOption === "color" && (
+              <div className="flex flex-wrap gap-3 animate-fade-in">
+                {BG_COLORS.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => setBgColor(c)}
+                    className={`w-10 h-10 rounded-xl border-4 transition-transform hover:scale-110 cursor-pointer ${
+                      bgColor === c ? "border-gray-900 scale-110" : "border-white"
+                    }`}
+                    style={{ background: c }}
+                  />
+                ))}
+                <div className="relative w-10 h-10 rounded-xl border-4 border-white overflow-hidden shadow-sm">
+                   <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer" />
+                </div>
+              </div>
+            )}
+
+            {bgOption === "image" && (
+              <div className="animate-fade-in">
+                <input ref={bgInputRef} type="file" accept="image/*" onChange={handleBgImageUpload} className="hidden" />
+                <button
+                  onClick={() => bgInputRef.current?.click()}
+                  className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-white border border-gray-100 text-[13px] font-bold text-gray-900 hover:border-gray-900 transition-all cursor-pointer shadow-sm"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  {bgImage ? "Replace Background Image" : "Upload High-Res Background"}
+                </button>
+              </div>
+            )}
           </div>
 
-          {bgOption === "color" && (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {BG_COLORS.map(c => (
-                <button
-                  key={c}
-                  onClick={() => setBgColor(c)}
-                  style={{ width: 32, height: 32, borderRadius: "50%", background: c, border: bgColor === c ? "2px solid #111827" : "1px solid #e5e7eb", cursor: "pointer", transition: "transform 0.1s" }}
-                  onMouseOver={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
-                  onMouseOut={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                />
-              ))}
-              <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} style={{ width: 32, height: 32, padding: 0, borderRadius: "50%", border: "1px solid #e5e7eb", cursor: "pointer" }} />
-            </div>
-          )}
+          {/* Download Card */}
+          <div className="flex flex-col p-8 rounded-[32px] bg-gray-900 text-white shadow-2xl shadow-gray-900/20">
+             <h3 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-6">Final Export</h3>
+             
+             <div className="mb-8">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Filename</p>
+                <p className="text-lg font-black truncate">{fileName.replace(/\.[^.]+$/, "")}<span className="text-gray-600">_clean.webm</span></p>
+             </div>
 
-          {bgOption === "image" && (
-            <div>
-              <input ref={bgInputRef} type="file" accept="image/*" onChange={handleBgImageUpload} style={{ display: "none" }} />
-              <button
-                onClick={() => bgInputRef.current?.click()}
-                style={{ padding: "8px 16px", borderRadius: 50, fontSize: 12, fontWeight: 600, background: "#fff", border: "1px solid #e5e7eb", color: "#6b7280", cursor: "pointer", fontFamily: "inherit" }}
-              >
-                {bgImage ? "Change Background" : "Upload Background Image"}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Download */}
-        <div style={{ marginTop: 24 }}>
-          <button
-            onClick={onDownload}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              width: "100%",
-              padding: "16px",
-              background: "#111827",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              fontSize: 16,
-              fontWeight: 700,
-              borderRadius: 20,
-              boxShadow: "0 10px 20px rgba(0,0,0,0.1)",
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Download Video
-          </button>
-          <p style={{ textAlign: "center", fontSize: 11, color: "#9ca3af", marginTop: 12 }}>
-            Free plan includes watermark · <a href="#pricing" style={{ color: "#111827", fontWeight: 600, textDecoration: "none" }}>Upgrade for HD</a>
-          </p>
+             <button
+              onClick={onDownload}
+              className="mt-auto group flex items-center justify-center gap-3 w-full py-5 bg-white text-gray-900 rounded-2xl text-[16px] font-black hover:bg-gray-100 transition-all cursor-pointer active:scale-[0.98]"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="group-hover:translate-y-0.5 transition-transform">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Download Video
+            </button>
+            
+            <p className="text-center text-[11px] text-gray-500 mt-4 font-medium uppercase tracking-tighter">
+              Standard Quality Included · <a href="#pricing" className="text-white hover:underline">Get 4K Pro</a>
+            </p>
+          </div>
         </div>
 
       </div>
     </section>
   );
 }
+

@@ -55,7 +55,7 @@ RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "YourSecretHere")
 rzp_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 PLAN_CREDITS = {
-    "free": 15,
+    "free": 10,
     "monthly": 50,
     "yearly": 50,
 }
@@ -71,12 +71,22 @@ def load_json(path: Path) -> dict:
     if not path.exists():
         return {}
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        # print(f"DEBUG: Loaded {len(data)} items from {path.name}")
+        return data
+    except Exception as e:
+        print(f"ERROR loading {path.name}: {e}")
         return {}
 
 def save_json(path: Path, data: dict):
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    # print(f"DEBUG: Saving {len(data)} items to {path.name}")
+    try:
+        # Atomic-ish write: save to temp then rename
+        tmp_path = path.with_suffix(".tmp")
+        tmp_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        tmp_path.replace(path)
+    except Exception as e:
+        print(f"ERROR saving {path.name}: {e}")
 
 
 def get_guest_record(ip: str) -> dict:
@@ -103,7 +113,7 @@ def _maybe_reset_credits(user: dict) -> dict:
     last_reset = datetime.fromisoformat(user.get("last_reset", datetime.now().isoformat()))
     if (datetime.now() - last_reset).days >= 30:
         plan = user.get("plan", "free")
-        user["credits"] = PLAN_CREDITS.get(plan, 15)
+        user["credits"] = PLAN_CREDITS.get(plan, 10)
         user["last_reset"] = datetime.now().isoformat()
     return user
 
@@ -247,6 +257,7 @@ def clerk_sync(body: ClerkSyncDict):
         token = create_token(body.user_id)
         return {"access_token": token, "user_id": body.user_id, "plan": user["plan"], "credits": user["credits"]}
         
+    # Case 3: brand new user
     now = datetime.now().isoformat()
     users[body.email] = {
         "id": body.user_id,
@@ -258,6 +269,7 @@ def clerk_sync(body: ClerkSyncDict):
         "created_at": now,
     }
     save_json(DB_FILE, users)
+    print(f"✅ New User Sync: {body.email} ({body.user_id})")
     token = create_token(body.user_id)
     return {"access_token": token, "user_id": body.user_id, "plan": "none", "credits": 0}
 
@@ -358,19 +370,39 @@ async def webhook(request: Request):
                     "last_reset": datetime.now().isoformat(),
                 })
 
-        # Razorpay: payment.captured (legacy support)
+        # Razorpay: payment.captured or subscription.charged
         elif event in ("payment.captured", "subscription.charged"):
-            payload = data.get("payload", {}).get("payment", {}).get("entity", {})
-            notes = payload.get("notes", {})
+            # Get payment entity
+            payment = data.get("payload", {}).get("payment", {}).get("entity", {})
+            notes = payment.get("notes", {})
             user_id = notes.get("user_id")
+            email = payment.get("email")
             plan = notes.get("plan", "monthly")
+            
+            # Auto-detect plan if not in notes (common for static rzp.io links)
+            amount = payment.get("amount", 0)
+            if amount >= 140000: plan = "yearly"
+            elif amount >= 19000: plan = "monthly"
+
             if user_id:
-                print(f"✅ Razorpay Success: Upgrading user {user_id} to {plan}")
+                print(f"✅ Razorpay Success (ID): Upgrading user {user_id} to {plan}")
                 update_user_by_id(user_id, {
                     "plan": plan,
                     "credits": PLAN_CREDITS.get(plan, 50),
                     "last_reset": datetime.now().isoformat(),
                 })
+            elif email:
+                print(f"✅ Razorpay Success (Email): Matching {email} for plan {plan}")
+                users = load_json(DB_FILE)
+                if email in users:
+                    user = users[email]
+                    user["plan"] = plan
+                    user["credits"] = PLAN_CREDITS.get(plan, 50)
+                    user["last_reset"] = datetime.now().isoformat()
+                    save_json(DB_FILE, users)
+                    print(f"💰 Credits applied to {email}")
+                else:
+                    print(f"❌ User not found for email: {email}")
     except Exception as e:
         print(f"❌ Webhook error: {e}")
     return {"status": "received"}
@@ -477,8 +509,15 @@ def deduct_credit(body: DeductRequest, authorization: str = Header(...)):
         raise HTTPException(status_code=403, detail="CREDITS_EXHAUSTED")
     job["deducted"] = True
     new_credits = user["credits"] - 1
-    update_user_by_id(user["id"], {"credits": new_credits})
-    return {"status": "ok", "remaining_credits": new_credits}
+    updated = update_user_by_id(user["id"], {"credits": new_credits})
+    
+    if updated:
+        print(f"💰 Credit Deducted: {user['email']} (-1) -> {new_credits}")
+        return {"status": "ok", "remaining_credits": new_credits}
+    else:
+        # Fallback if update_user_by_id failed to find the user by ID
+        print(f"❌ Failed to update credits in DB for user {user['id']}")
+        return {"status": "ok", "remaining_credits": user["credits"]}
 
 # ──────────────────────────────────────────────
 # Frame Processing

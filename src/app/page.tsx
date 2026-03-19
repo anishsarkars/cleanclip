@@ -91,9 +91,9 @@ export default function Home() {
     }
   }, [isLoaded, user]);
 
-  // 2. Load Razorpay Script
+  // 2. Payment Integration
   useEffect(() => {
-    // Razorpay removed (using DodoPayments checkout instead)
+    // DodoPayments links are handled via direct redirect in handleUpgrade
   }, []);
 
   const stopPolling = () => {
@@ -218,36 +218,28 @@ export default function Home() {
   }, []);
 
   const handleUpgrade = async (plan: string) => {
-    if (!user || !userInfo) {
+    if (!isLoaded) return;
+    
+    if (!user) {
       openSignIn();
       return;
     }
 
-    try {
-      if (plan !== "monthly" && plan !== "yearly") throw new Error("Invalid plan");
+    if (!userInfo) {
+      alert("Backend synchronization is still in progress. Please try again in 5 seconds.");
+      return;
+    }
 
-      const res = await fetch("/api/dodo/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan,
-          customer: userInfo?.email ? { email: userInfo.email } : undefined,
-          metadata: {
-            source: "pricing",
-          },
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Could not start checkout");
+    const DODOPAYMENTS_LINKS: Record<string, string> = {
+      monthly: "https://checkout.dodopayments.com/buy/pdt_0NalSjZWHhamGs4oYJvTe?quantity=99",
+      yearly: "https://checkout.dodopayments.com/buy/pdt_0NalSUMsJzvscQl8QNvVM?quantity=99",
+    };
 
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url;
-        return;
-      }
-      throw new Error("Missing checkout_url");
-
-    } catch (err: any) {
-      alert(err.message);
+    const link = DODOPAYMENTS_LINKS[plan];
+    if (link) {
+      window.location.href = link;
+    } else {
+      alert("Invalid plan selected");
     }
   };
 
@@ -278,7 +270,7 @@ export default function Home() {
         else alert(data.detail || "Error deducting credit");
         return;
       }
-      setUserInfo({ ...userInfo, credits: data.remaining_credits });
+      setUserInfo(prev => prev ? { ...prev, credits: data.remaining_credits } : null);
       
       const link = document.createElement("a");
       link.href = processedUrl;
@@ -292,7 +284,7 @@ export default function Home() {
   };
 
   return (
-    <main style={{ minHeight: "100vh", background: "#fff" }}>
+    <main className="min-h-screen bg-white">
       {showOnboarding && token && (
         <OnboardingModal
           token={token}
@@ -311,46 +303,48 @@ export default function Home() {
       <Navbar userInfo={userInfo} />
 
       {appState === "idle" && (
-        <>
-          <div style={{ position: "relative" }}>
-            <HeroSection onFileSelected={handleFileSelected} />
-          </div>
+        <div className="animate-fade-in">
+          <HeroSection onFileSelected={handleFileSelected} />
           <HowItWorks />
           <PricingSection onUpgrade={handleUpgrade} />
-        </>
-      )
-      }
+        </div>
+      )}
 
-      {
-        appState === "processing" && selectedFile && (
-          <ProcessingScreen fileName={selectedFile.name} progress={progress} step={step} />
-        )
-      }
+      {appState === "processing" && selectedFile && (
+        <ProcessingScreen fileName={selectedFile.name} progress={progress} step={step} />
+      )}
 
-      {
-        appState === "error" && (
-          <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#fdfdfc", padding: 24 }}>
-            <div style={{ maxWidth: 400, textAlign: "center", padding: 40, background: "#fff", borderRadius: 20, boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-              <h2 style={{ fontSize: 20, fontWeight: 900, marginBottom: 12 }}>Upload Error</h2>
-              <p style={{ fontSize: 14, color: "#6b7280", margin: "0 0 24px", lineHeight: 1.5 }}>{errorMsg}</p>
-              <button onClick={handleReset} style={{ padding: "10px 24px", background: "#111827", color: "#fff", borderRadius: 50, border: "none", fontWeight: 600, cursor: "pointer" }}>Retry</button>
+      {appState === "error" && (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6 animate-fade-in">
+          <div className="max-w-md w-full text-center p-12 bg-white rounded-[40px] shadow-2xl shadow-gray-200/50 border border-gray-100">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
             </div>
+            <h2 className="text-2xl font-black text-gray-900 mb-3">Upload Error</h2>
+            <p className="text-[15px] text-gray-500 mb-10 leading-relaxed">{errorMsg}</p>
+            <button 
+              onClick={handleReset} 
+              className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-xl shadow-gray-200 cursor-pointer active:scale-95"
+            >
+              Try Again
+            </button>
           </div>
-        )
-      }
+        </div>
+      )}
 
-      {
-        appState === "result" && selectedFile && (
-          <>
-            <div style={{ paddingTop: 60 }}>
-              <ResultSection originalUrl={originalUrl} processedUrl={processedUrl} fileName={selectedFile.name} onReset={handleReset} onDownload={handleDownload} />
-            </div>
+      {appState === "result" && selectedFile && (
+        <div className="animate-fade-in pt-16">
+          <ResultSection originalUrl={originalUrl} processedUrl={processedUrl} fileName={selectedFile.name} onReset={handleReset} onDownload={handleDownload} />
+          <div className="bg-gray-50">
             <PricingSection onUpgrade={handleUpgrade} />
-          </>
-        )
-      }
+          </div>
+        </div>
+      )}
 
       <Footer />
-    </main >
+    </main>
   );
 }
+

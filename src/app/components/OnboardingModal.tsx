@@ -19,15 +19,15 @@ export default function OnboardingModal({ token, onPaymentStart, onSuccess }: On
       {
         id: "free",
         name: "Free",
-        desc: "15 videos/month",
+        desc: "10 videos / month",
         price: "₹0",
-        meta: "480p · Watermark",
+        meta: "480p SD · Watermark",
         primary: false,
       },
       {
         id: "monthly",
         name: "Monthly",
-        desc: "50 videos/month",
+        desc: "50 videos / month",
         price: "₹199",
         meta: "720p HD · No watermark",
         primary: true,
@@ -35,9 +35,9 @@ export default function OnboardingModal({ token, onPaymentStart, onSuccess }: On
       {
         id: "yearly",
         name: "Yearly",
-        desc: "50 videos/month discounted",
+        desc: "Best value overall",
         price: "₹1,499",
-        meta: "Best value · No watermark",
+        meta: "HD Pro · No watermark",
         primary: false,
       },
     ],
@@ -64,9 +64,8 @@ export default function OnboardingModal({ token, onPaymentStart, onSuccess }: On
       onSuccess(plan, credits);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Could not activate Free plan";
-      // Keep the UI usable even if backend doesn’t support free plan selection.
-      setError(`${msg}. You can still choose a paid plan or continue and upgrade later.`);
-      onSuccess("free", 15);
+      setError(`${msg}. Activating local free plan...`);
+      setTimeout(() => onSuccess("free", 10), 1500);
     } finally {
       setBusy(null);
     }
@@ -86,75 +85,36 @@ export default function OnboardingModal({ token, onPaymentStart, onSuccess }: On
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 55,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
-      id="onboarding-modal"
-    >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(0,0,0,0.5)",
-          backdropFilter: "blur(6px)",
-        }}
-      />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 animate-fade-in">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
 
-      <div
-        style={{
-          position: "relative",
-          zIndex: 10,
-          background: "#fff",
-          borderRadius: 24,
-          padding: 32,
-          maxWidth: 760,
-          width: "100%",
-          boxShadow: "0 30px 60px rgba(0,0,0,0.2)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.2em", color: "#9ca3af", textTransform: "uppercase", margin: "0 0 10px" }}>
-              One last step
-            </p>
-            <h2 style={{ fontSize: 24, fontWeight: 900, color: "#111827", margin: "0 0 10px" }}>
-              Pick a plan to continue
+      <div className="relative z-10 bg-white rounded-[48px] p-8 md:p-12 max-w-4xl w-full shadow-2xl border border-white/20 animate-slide-in">
+        <div className="flex flex-col md:flex-row items-start justify-between gap-8 mb-12">
+          <div className="flex-1">
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 block mb-3">One last step</span>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-4 tracking-tight">
+              Ready to create magic?
             </h2>
-            <p style={{ fontSize: 13, color: "#6b7280", margin: 0, lineHeight: 1.6 }}>
-              You can upgrade anytime. Credits are tracked per account.
+            <p className="text-[15px] text-gray-500 font-medium leading-relaxed max-w-md m-0">
+              Select a plan to activate your account. You can change your preference at any time from your profile.
             </p>
           </div>
 
-          <div style={{ width: 56, height: 56, background: "#111827", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
+          <div className="w-16 h-16 bg-gray-900 rounded-[24px] flex items-center justify-center shrink-0 shadow-xl shadow-gray-200">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M12 2l3 7h7l-5.5 4.2L18.5 21 12 16.8 5.5 21l2-7.8L2 9h7l3-7z" strokeLinejoin="round" />
             </svg>
           </div>
         </div>
 
-        <div
-          style={{
-            marginTop: 26,
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-            gap: 14,
-          }}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((p) => {
             const disabled = busy !== null;
             const isBusy = busy === p.id;
-            const isFree = p.id === "free";
 
             const onClick = () => {
               if (disabled) return;
-              if (isFree) selectFree();
+              if (p.id === "free") selectFree();
               else startPaid(p.id as "monthly" | "yearly");
             };
 
@@ -163,33 +123,33 @@ export default function OnboardingModal({ token, onPaymentStart, onSuccess }: On
                 key={p.id}
                 onClick={onClick}
                 disabled={disabled}
-                style={{
-                  textAlign: "left",
-                  borderRadius: 18,
-                  border: "1px solid",
-                  borderColor: p.primary ? "#111827" : "#e5e7eb",
-                  background: p.primary ? "#111827" : "#fff",
-                  color: p.primary ? "#fff" : "#111827",
-                  padding: 18,
-                  cursor: disabled ? "not-allowed" : "pointer",
-                  fontFamily: "inherit",
-                  opacity: disabled && !isBusy ? 0.6 : 1,
-                  transition: "transform 0.1s ease",
-                }}
-                onMouseDown={(e) => {
-                  if (!disabled) e.currentTarget.style.transform = "scale(0.99)";
-                }}
-                onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                suppressHydrationWarning
+                className={`flex flex-col text-left p-8 rounded-[36px] transition-all relative overflow-hidden group cursor-pointer ${
+                  p.primary 
+                  ? "bg-gray-900 text-white shadow-2xl shadow-gray-900/20 active:scale-[0.98]" 
+                  : "bg-gray-50 text-gray-900 border border-gray-100 hover:border-gray-900 active:scale-[0.98]"
+                } ${disabled && !isBusy ? "opacity-50 grayscale" : "opacity-100"}`}
               >
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900 }}>{p.name}</div>
-                  <div style={{ fontSize: 18, fontWeight: 900 }}>{p.price}</div>
+                {isBusy && (
+                  <div className="absolute inset-0 bg-inherit flex items-center justify-center z-10">
+                    <div className="w-6 h-6 border-3 border-current border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between mb-8">
+                  <span className="text-sm font-black uppercase tracking-widest">{p.name}</span>
+                  {p.primary && <span className="text-[10px] font-black bg-white/20 px-2.5 py-1 rounded-full uppercase tracking-tighter">Recommended</span>}
                 </div>
-                <div style={{ marginTop: 6, fontSize: 12, opacity: p.primary ? 0.9 : 1, color: p.primary ? "rgba(255,255,255,0.75)" : "#6b7280" }}>
-                  {p.desc}
+
+                <div className="flex items-baseline gap-1 mb-2">
+                  <span className="text-3xl font-black">{p.price}</span>
+                  <span className={`text-[11px] font-bold ${p.primary ? "text-gray-400" : "text-gray-400"}`}>/month</span>
                 </div>
-                <div style={{ marginTop: 10, fontSize: 11, color: p.primary ? "rgba(255,255,255,0.6)" : "#9ca3af" }}>
-                  {isBusy ? "Please wait…" : p.meta}
+
+                <p className={`text-[13px] font-bold mb-8 ${p.primary ? "text-gray-400" : "text-gray-500"}`}>{p.desc}</p>
+                
+                <div className={`mt-auto text-[11px] font-black uppercase tracking-widest ${p.primary ? "text-white/60" : "text-gray-400"}`}>
+                  {p.meta}
                 </div>
               </button>
             );
@@ -197,30 +157,22 @@ export default function OnboardingModal({ token, onPaymentStart, onSuccess }: On
         </div>
 
         {error && (
-          <div
-            style={{
-              marginTop: 16,
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
-              color: "#991b1b",
-              borderRadius: 14,
-              padding: "10px 12px",
-              fontSize: 12,
-              lineHeight: 1.4,
-            }}
-            role="alert"
-          >
+          <div className="mt-8 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-[13px] font-bold animate-fade-in text-center shadow-sm">
             {error}
           </div>
         )}
 
-        <div style={{ marginTop: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", opacity: 0.6 }}>
-          <p style={{ fontSize: 11, color: "#9ca3af", margin: 0, lineHeight: 1.5 }}>
-            Payments are securely processed by DodoPayments.
-          </p>
+        <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-gray-100 pt-8 opacity-60">
+          <p className="text-[12px] font-medium text-gray-400 m-0">Secure payments by DodoPayments</p>
+          <div className="flex gap-4">
+             <div className="w-8 h-5 bg-gray-100 rounded-md" />
+             <div className="w-8 h-5 bg-gray-100 rounded-md" />
+             <div className="w-8 h-5 bg-gray-100 rounded-md" />
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
 

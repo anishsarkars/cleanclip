@@ -13,124 +13,132 @@ interface NavbarProps {
   onLogout?: () => void;
 }
 
-
-
-export default function Navbar({ onAuthClick, userInfo, onLogout }: NavbarProps) {
+export default function Navbar({ userInfo }: NavbarProps) {
   const { openSignIn, openSignUp } = useClerk();
   const { user } = useUser();
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 20);
+    const fn = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", fn);
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
   return (
-    <nav style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 50,
-      height: 60,
-      background: scrolled ? "rgba(255,255,255,0.96)" : "transparent",
-      backdropFilter: scrolled ? "blur(12px)" : "none",
-      borderBottom: scrolled ? "1px solid #f3f4f6" : "none",
-      transition: "all 0.25s ease",
-    }}>
-      <div className="section-container" style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-
+    <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
+      scrolled ? "h-16 glass" : "h-20 bg-transparent"
+    }`}>
+      <div className="section-container h-full flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" id="nav-logo" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <div style={{ width: 32, height: 32, background: "#111827", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Link href="/" className="flex items-center gap-2.5 no-underline group">
+          <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M6 22V4c0-1.1.9-2 2-2h10l4 4v10c0 1.1-.9 2-2 2h-6"/>
               <path d="M14 2v4h4"/>
               <path d="M8 18l-4-4 4-4"/>
             </svg>
           </div>
-          <span style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.03em", color: "#111827" }}>
-            Clean<span style={{ color: "#9ca3af" }}>clip</span>
+          <span className="text-lg font-black tracking-tight text-gray-900">
+            Clean<span className="text-gray-400">clip</span>
           </span>
         </Link>
 
-        {/* Nav links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center gap-8">
           {[{ l: "How it works", h: "#how-it-works" }, { l: "Pricing", h: "#pricing" }].map(({ l, h }) => (
-            <a key={l} href={h} style={{ fontSize: 13, color: "#6b7280", fontWeight: 500, textDecoration: "none", transition: "color 0.15s" }}
-              onMouseOver={(e) => (e.currentTarget.style.color = "#111827")}
-              onMouseOut={(e) => (e.currentTarget.style.color = "#6b7280")}
-            >
+            <a key={l} href={h} className="text-[13px] text-gray-500 font-medium no-underline hover:text-gray-900 transition-colors">
               {l}
             </a>
           ))}
         </div>
 
-        {/* Auth */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {/* Auth & Desktop Actions */}
+        <div className="flex items-center gap-3">
           {user ? (
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-               {/* 🎯 CREDIT DISPLAY (TOP BAR UI) */}
+            <div className="flex items-center gap-4">
                {userInfo && (
-                 <a 
-                   href="#pricing"
-                   style={{ 
-                     display: "flex", alignItems: "center", gap: 6,
-                     background: "#f3f4f6", padding: "6px 12px", 
-                     borderRadius: 50, color: "#111827", 
-                     fontSize: 12, fontWeight: 800, textDecoration: "none",
-                     border: "1px solid #e5e7eb", transition: "all 0.2s"
-                   }}
-                 >
-                   ⚡ {userInfo.credits} {userInfo.plan === "free" ? "/ 15 credits" : "videos left"}
-                 </a>
+                  <a 
+                    href="#pricing"
+                    className="hidden sm:flex items-center justify-center gap-1.5 bg-gray-50 border border-gray-200 px-3.5 py-1.5 rounded-full text-[11px] font-black text-gray-900 hover:bg-white transition-all shadow-sm"
+                  >
+                    <span className="opacity-70 text-[10px] leading-none mb-0.5">⚡</span> 
+                    <span className="leading-none uppercase tracking-tight">{userInfo.credits} {userInfo.plan === "free" ? "/ 10" : "left"}</span>
+                  </a>
                )}
-              <UserButton />
+              <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8 shadow-sm" } }} />
             </div>
           ) : (
-            <>
-              <button
-                onClick={() => openSignIn()}
-                style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: "#6b7280",
-                  background: "none",
-                  border: "none",
-                  padding: "8px 0",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  textDecoration: "none",
-                }}
+            <div className="hidden sm:flex items-center gap-3">
+              <button 
+                onClick={() => openSignIn()} 
+                suppressHydrationWarning
+                className="text-[13px] font-medium text-gray-500 hover:text-gray-900 px-2 py-1 transition-colors cursor-pointer"
               >
                 Log in
               </button>
-              <button
-                onClick={() => openSignUp()}
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  background: "#111827",
-                  color: "#fff",
-                  border: "none",
-                  padding: "8px 18px",
-                  borderRadius: 50,
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                }}
+              <button 
+                onClick={() => openSignUp()} 
+                suppressHydrationWarning
+                className="text-[13px] font-bold bg-gray-900 text-white px-5 py-2 rounded-full hover:bg-black transition-all shadow-lg shadow-gray-200 cursor-pointer"
               >
                 Sign up
               </button>
-            </>
+            </div>
           )}
 
+          {/* Mobile Menu Toggle */}
+          <button 
+            className="md:hidden w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-full hover:bg-gray-100 transition-colors z-[110]"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <div className={`w-5 h-0.5 bg-gray-900 transition-all ${mobileMenuOpen ? "rotate-45 translate-y-2" : ""}`} />
+            <div className={`w-5 h-0.5 bg-gray-900 transition-all ${mobileMenuOpen ? "opacity-0" : ""}`} />
+            <div className={`w-5 h-0.5 bg-gray-900 transition-all ${mobileMenuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu Drawer */}
+      <div className={`fixed inset-0 bg-white z-[105] md:hidden transition-all duration-500 ease-in-out ${
+        mobileMenuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+      }`}>
+        <div className="flex flex-col items-center justify-center h-full gap-8 p-6">
+          {[{ l: "How it works", h: "#how-it-works" }, { l: "Pricing", h: "#pricing" }].map(({ l, h }) => (
+            <a key={l} href={h} onClick={() => setMobileMenuOpen(false)} className="text-2xl font-bold text-gray-900 no-underline">
+              {l}
+            </a>
+          ))}
+          {!user && (
+            <div className="flex flex-col w-full gap-4 mt-8 max-w-xs">
+              <button 
+                onClick={() => { setMobileMenuOpen(false); openSignIn(); }} 
+                suppressHydrationWarning
+                className="w-full py-4 text-lg font-bold border border-gray-200 rounded-2xl text-gray-900"
+              >
+                Log in
+              </button>
+              <button 
+                onClick={() => { setMobileMenuOpen(false); openSignUp(); }} 
+                suppressHydrationWarning
+                className="w-full py-4 text-lg font-bold bg-gray-900 text-white rounded-2xl shadow-xl shadow-gray-200"
+              >
+                Get Started
+              </button>
+            </div>
+          )}
+          {user && userInfo && (
+            <div className="bg-gray-50 border border-gray-200 p-6 rounded-3xl w-full max-w-xs text-center">
+              <p className="text-sm font-medium text-gray-500 uppercase tracking-widest mb-1">Your Credits</p>
+              <p className="text-4xl font-black text-gray-900">{userInfo.credits}</p>
+              <p className="text-xs text-gray-400 mt-2">Plan: <span className="text-gray-600 font-bold uppercase">{userInfo.plan}</span></p>
+            </div>
+          )}
         </div>
       </div>
     </nav>
   );
 }
+
 
 

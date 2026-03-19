@@ -7,159 +7,78 @@ interface PaywallModalProps {
 
 export default function PaywallModal({ onUpgrade, onClose }: PaywallModalProps) {
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 50,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
-      id="paywall-modal"
-    >
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 animate-fade-in">
       {/* Backdrop */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(0,0,0,0.5)",
-          backdropFilter: "blur(6px)",
-        }}
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
       {/* Modal card */}
-      <div style={{
-        position: "relative",
-        zIndex: 10,
-        background: "#fff",
-        borderRadius: 24,
-        padding: 32,
-        maxWidth: 440,
-        width: "100%",
-        boxShadow: "0 30px 60px rgba(0,0,0,0.2)",
-        textAlign: "center",
-      }}>
+      <div className="relative z-10 bg-white rounded-[40px] p-8 md:p-12 max-w-md w-full shadow-2xl border border-white/20 animate-slide-in text-center">
         {/* Close */}
         <button
-          id="paywall-close-btn"
           onClick={onClose}
-          style={{
-            position: "absolute",
-            top: 20,
-            right: 20,
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            background: "#f3f4f6",
-            border: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "#e5e7eb")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "#f3f4f6")}
+          className="absolute top-6 right-6 w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer group"
+          aria-label="Close"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-400 group-hover:text-gray-900 transition-colors">
             <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
           </svg>
         </button>
 
         {/* Icon */}
-        <div style={{
-          width: 56, height: 56,
-          background: "#111827",
-          borderRadius: 16,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          margin: "0 auto 24px",
-        }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
+        <div className="w-20 h-20 bg-gray-900 rounded-[28px] flex items-center justify-center mx-auto mb-8 shadow-xl shadow-gray-200">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
             <path d="M7 11V7a5 5 0 0110 0v4" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
 
-        <h2 style={{ fontSize: 22, fontWeight: 900, color: "#111827", marginBottom: 10 }}>
-          You&apos;re out of credits
+        <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-4 tracking-tight">
+          Credits Exhausted
         </h2>
-        <p style={{ fontSize: 14, color: "#6b7280", lineHeight: 1.6, marginBottom: 32 }}>
-          You&apos;ve used all your free credits for this month. Upgrade for more videos, 720p HD quality, and zero watermarks.
+        <p className="text-[15px] text-gray-500 font-medium leading-relaxed mb-10 px-4">
+          You&apos;ve reached your limit. Upgrade now for high-speed processing, HD quality, and zero watermarks.
         </p>
 
         {/* Upgrade Options */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+        <div className="flex flex-col gap-4 mb-10">
           {/* Monthly */}
           <button
-            id="paywall-monthly-btn"
             onClick={() => onUpgrade("monthly")}
-            style={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "16px 20px",
-              borderRadius: 16,
-              background: "#111827",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              transition: "transform 0.1s",
-            }}
-            onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
-            onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            suppressHydrationWarning
+            className="group flex items-center justify-between p-6 rounded-3xl bg-gray-900 text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
           >
-            <div style={{ textAlign: "left" }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>Monthly Plan</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>50 videos · 720p HD · No watermark</div>
+            <div className="text-left">
+              <div className="font-black text-[15px]">Monthly Pro</div>
+              <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mt-1">50 videos · HD · 24/7 Support</div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 18, fontWeight: 900 }}>₹199</div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.6)" }}>/month</div>
+            <div className="text-right">
+              <div className="text-xl font-black">₹199</div>
+              <div className="text-[10px] text-gray-500 font-black uppercase">/mo</div>
             </div>
           </button>
 
           {/* Yearly */}
           <button
-            id="paywall-yearly-btn"
             onClick={() => onUpgrade("yearly")}
-            style={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "16px 20px",
-              borderRadius: 16,
-              background: "#fff",
-              border: "1px solid #e5e7eb",
-              color: "#111827",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              transition: "border 0.2s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.borderColor = "#111827")}
-            onMouseOut={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
+            suppressHydrationWarning
+            className="group flex items-center justify-between p-6 rounded-3xl bg-white border-2 border-gray-100 hover:border-gray-900 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
           >
-            <div style={{ textAlign: "left" }}>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>Yearly Plan</div>
-              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>Save 37% · 50 videos/mo · No watermark</div>
+            <div className="text-left">
+              <div className="font-black text-[15px] text-gray-900">Yearly Plan</div>
+              <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider mt-1">Save 37% · Yearly Access</div>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 18, fontWeight: 900 }}>₹1,499</div>
-              <div style={{ fontSize: 10, color: "#9ca3af" }}>/year</div>
+            <div className="text-right">
+              <div className="text-xl font-black text-gray-900">₹1,499</div>
+              <div className="text-[10px] text-gray-400 font-black uppercase">/yr</div>
             </div>
           </button>
         </div>
 
-        <p style={{ fontSize: 11, color: "#9ca3af" }}>
-          Your 15 monthly free credits will automatically refill in 30 days.
+        <p className="text-[11px] font-bold text-gray-400 m-0 uppercase tracking-widest">
+          Credits refill automatically next month
         </p>
       </div>
     </div>
   );
 }
+

@@ -30,22 +30,20 @@ export default function AuthModal({ initialMode, onClose, onSuccess }: AuthModal
   useEffect(() => setMode(initialMode), [initialMode]);
 
   const endpoint = useMemo(() => {
-    // Backend naming can vary; we support common options via fallback below.
     return mode === "login" ? "/auth/login" : "/auth/signup";
   }, [mode]);
 
-  const title = mode === "login" ? "Welcome back" : "Create your account";
+  const title = mode === "login" ? "Welcome back" : "Create account";
   const subtitle =
     mode === "login"
-      ? "Log in to sync your credits across devices."
-      : "Sign up to get more credits and remove watermarks.";
+      ? "Log in to access your dashboard and credits."
+      : "Join thousands of creators using AI for video.";
 
   const submit = async () => {
     setError(null);
     setSubmitting(true);
     try {
       const tryEndpoints = [endpoint];
-      // Common alternates (some backends use /register or /sign-up etc.)
       if (mode === "signup") tryEndpoints.push("/auth/register", "/auth/sign-up");
       if (mode === "login") tryEndpoints.push("/auth/signin", "/auth/sign-in");
 
@@ -91,221 +89,102 @@ export default function AuthModal({ initialMode, onClose, onSuccess }: AuthModal
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 60,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: 16,
-      }}
-      id="auth-modal"
-    >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(0,0,0,0.5)",
-          backdropFilter: "blur(6px)",
-        }}
-        onClick={onClose}
-      />
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 animate-fade-in">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
-      <div
-        style={{
-          position: "relative",
-          zIndex: 10,
-          background: "#fff",
-          borderRadius: 24,
-          padding: 32,
-          maxWidth: 440,
-          width: "100%",
-          boxShadow: "0 30px 60px rgba(0,0,0,0.2)",
-        }}
-      >
+      <div className="relative z-10 bg-white rounded-[40px] p-8 md:p-12 max-w-md w-full shadow-2xl border border-white/20 animate-slide-in">
         <button
-          id="auth-close-btn"
           onClick={onClose}
-          style={{
-            position: "absolute",
-            top: 20,
-            right: 20,
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            background: "#f3f4f6",
-            border: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-          }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "#e5e7eb")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "#f3f4f6")}
+          className="absolute top-6 right-6 w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition-colors cursor-pointer group"
           aria-label="Close"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-400 group-hover:text-gray-900 transition-colors">
             <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
           </svg>
         </button>
 
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            background: "#111827",
-            borderRadius: 16,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 0 18px",
-          }}
-        >
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8">
+        <div className="w-16 h-16 bg-gray-900 rounded-[22px] flex items-center justify-center mb-8 shadow-xl shadow-gray-200">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
             <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" />
             <path d="M20 21a8 8 0 0 0-16 0" strokeLinecap="round" />
           </svg>
         </div>
 
-        <h2 style={{ fontSize: 22, fontWeight: 900, color: "#111827", margin: "0 0 8px" }}>
+        <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2 tracking-tight">
           {title}
         </h2>
-        <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.6, margin: "0 0 22px" }}>
+        <p className="text-[14px] text-gray-500 font-medium leading-relaxed mb-8">
           {subtitle}
         </p>
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+        <div className="flex bg-gray-50 p-1.5 rounded-[22px] mb-8">
           <button
             onClick={() => setMode("login")}
-            disabled={submitting}
-            style={{
-              flex: 1,
-              padding: "10px 0",
-              borderRadius: 14,
-              fontWeight: 800,
-              fontSize: 12,
-              border: mode === "login" ? "1px solid #111827" : "1px solid #e5e7eb",
-              background: mode === "login" ? "#111827" : "#fff",
-              color: mode === "login" ? "#fff" : "#111827",
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
+            className={`flex-1 py-3.5 rounded-[18px] text-xs font-black uppercase tracking-widest transition-all ${
+              mode === "login" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"
+            }`}
           >
             Log in
           </button>
           <button
             onClick={() => setMode("signup")}
-            disabled={submitting}
-            style={{
-              flex: 1,
-              padding: "10px 0",
-              borderRadius: 14,
-              fontWeight: 800,
-              fontSize: 12,
-              border: mode === "signup" ? "1px solid #111827" : "1px solid #e5e7eb",
-              background: mode === "signup" ? "#111827" : "#fff",
-              color: mode === "signup" ? "#fff" : "#111827",
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
+            className={`flex-1 py-3.5 rounded-[18px] text-xs font-black uppercase tracking-widest transition-all ${
+              mode === "signup" ? "bg-white text-gray-900 shadow-sm" : "text-gray-400 hover:text-gray-600"
+            }`}
           >
             Sign up
           </button>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "#111827" }}>Email</span>
+        <div className="flex flex-col gap-5">
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">Email Address</span>
             <input
-              id="auth-email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder="name@example.com"
               type="email"
-              autoComplete="email"
-              style={{
-                padding: "12px 14px",
-                borderRadius: 14,
-                border: "1px solid #e5e7eb",
-                fontSize: 14,
-                outline: "none",
-              }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#111827")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
+              className="w-full px-6 py-4 rounded-2xl border-2 border-gray-50 focus:border-gray-900 outline-none transition-all text-sm font-bold bg-gray-50/50"
             />
-          </label>
+          </div>
 
-          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 800, color: "#111827" }}>Password</span>
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest px-1">Password</span>
             <input
-              id="auth-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               type="password"
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              style={{
-                padding: "12px 14px",
-                borderRadius: 14,
-                border: "1px solid #e5e7eb",
-                fontSize: 14,
-                outline: "none",
-              }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#111827")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") submit();
-              }}
+              className="w-full px-6 py-4 rounded-2xl border-2 border-gray-50 focus:border-gray-900 outline-none transition-all text-sm font-bold bg-gray-50/50"
+              onKeyDown={(e) => e.key === "Enter" && submit()}
             />
-          </label>
+          </div>
 
           {error && (
-            <div
-              style={{
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
-                color: "#991b1b",
-                borderRadius: 14,
-                padding: "10px 12px",
-                fontSize: 12,
-                lineHeight: 1.4,
-              }}
-              role="alert"
-            >
+            <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-[12px] font-bold animate-fade-in">
               {error}
             </div>
           )}
 
           <button
-            id="auth-submit-btn"
             onClick={submit}
             disabled={submitting || !email || !password}
-            style={{
-              marginTop: 4,
-              width: "100%",
-              padding: "12px 16px",
-              borderRadius: 16,
-              background: "#111827",
-              color: "#fff",
-              border: "none",
-              cursor: submitting ? "wait" : "pointer",
-              fontWeight: 800,
-              fontSize: 14,
-              fontFamily: "inherit",
-              opacity: submitting || !email || !password ? 0.7 : 1,
-            }}
+            className="w-full py-5 bg-gray-900 text-white rounded-[24px] font-black text-sm uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200 disabled:opacity-50 disabled:cursor-not-allowed group"
           >
-            {submitting ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
+            {submitting ? (
+               <div className="w-5 h-5 border-3 border-white/20 border-t-white rounded-full animate-spin mx-auto" />
+            ) : (
+               mode === "login" ? "Welcome Back" : "Start Creating"
+            )}
           </button>
 
-          <p style={{ fontSize: 11, color: "#9ca3af", margin: "6px 0 0", lineHeight: 1.5 }}>
-            By continuing, you agree to store a login token in your browser for a smoother experience.
+          <p className="text-[11px] text-gray-400 text-center leading-relaxed px-4">
+            By continuing, you agree to our <a href="#" className="underline">Terms</a> and <a href="#" className="underline">Privacy</a>.
           </p>
         </div>
       </div>
     </div>
   );
 }
+
 
