@@ -412,16 +412,18 @@ async def webhook(request: Request):
 # ──────────────────────────────────────────────
 jobs: Dict[str, dict] = {}
 rembg_session = None
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count() or 4)
+# Increase workers for much faster frame processing
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=(os.cpu_count() or 4) * 2)
 
 
 @app.on_event("startup")
 async def startup():
     global rembg_session
-    print("🔄 Loading u2net model for better precision…")
+    print("🔄 Loading ISNet model for ultra-high precision…")
     loop = asyncio.get_event_loop()
-    rembg_session = await loop.run_in_executor(None, lambda: new_session("u2net"))
-    print("✅ AI model ready.")
+    # isnet-general-use is usually the best performing for general background removal
+    rembg_session = await loop.run_in_executor(None, lambda: new_session("isnet-general-use"))
+    print("✅ High-class AI model ready.")
 
 
 @app.get("/health")
@@ -525,21 +527,31 @@ def deduct_credit(body: DeductRequest, authorization: str = Header(...)):
 def _process_frame(frame_rgb: np.ndarray, plan: str) -> np.ndarray:
     img = Image.fromarray(frame_rgb)
 
-    # Resolution caps
-    if plan in ("guest", "free") and img.height > 480:
-        r = 480 / img.height
-        img = img.resize((int(img.width * r), 480), Image.Resampling.LANCZOS)
-    elif plan in ("monthly", "yearly") and img.height > 720:
-        r = 720 / img.height
-        img = img.resize((int(img.width * r), 720), Image.Resampling.LANCZOS)
+    # Resolution caps — 1080p for Pro, 480p/720p for others
+    if plan in ("guest", "free") and img.height > 540:
+        r = 540 / img.height
+        img = img.resize((int(img.width * r), 540), Image.Resampling.LANCZOS)
+    elif plan in ("monthly", "yearly") and img.height > 1080:
+        r = 1080 / img.height
+        img = img.resize((int(img.width * r), 1080), Image.Resampling.LANCZOS)
 
-    result = remove(img, session=rembg_session).convert("RGBA")
+    # HIGH CLASS: Use alpha matting for perfect edges
+    result = remove(
+        img, 
+        session=rembg_session,
+        alpha_matting=True,
+        alpha_matting_foreground_threshold=240,
+        alpha_matting_background_threshold=10,
+        alpha_matting_erode_size=10
+    ).convert("RGBA")
 
     # Watermark for guest/free
     if plan in ("guest", "free"):
         draw = ImageDraw.Draw(result)
         w, h = result.size
-        draw.text((w - 80, h - 20), "Cleanclip", fill=(255, 255, 255, 150))
+        # Scaled watermark
+        font_size = max(12, int(h * 0.03))
+        draw.text((w - 100, h - 30), "Cleanclip", fill=(255, 255, 255, 150))
 
     return np.array(result)
 
@@ -578,7 +590,8 @@ async def _process_video(job: dict, input_path: Path, output_path: Path, plan: s
         frames.append(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB))
     cap.release()
 
-    chunk = 2 if plan == "guest" else (4 if plan == "free" else 12)
+    # Faster chunks
+    chunk = 4 if plan == "guest" else (8 if plan == "free" else 16)
     results = []
     loop = asyncio.get_event_loop()
     for i in range(0, len(frames), chunk):
@@ -592,7 +605,7 @@ async def _process_video(job: dict, input_path: Path, output_path: Path, plan: s
     job["step"] = "Encoding output…"
     writer = imageio.get_writer(
         str(output_path), format="ffmpeg", fps=fps, codec="libvpx-vp9",
-        output_params=["-pix_fmt", "yuva420p", "-crf", "30", "-b:v", "0"],
+        output_params=["-pix_fmt", "yuva420p", "-crf", "22", "-b:v", "0"],
     )
     for f in results:
         writer.append_data(f)

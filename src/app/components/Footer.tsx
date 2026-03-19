@@ -5,16 +5,9 @@ export default function Footer() {
         <div className="flex flex-col lg:flex-row justify-between gap-16 mb-16">
           {/* Brand */}
           <div className="max-w-xs transition-opacity hover:opacity-80">
-            <div className="flex items-center gap-2.5 mb-6 group cursor-pointer">
-              <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 22V4c0-1.1.9-2 2-2h10l4 4v10c0 1.1-.9 2-2 2h-6"/>
-                  <path d="M14 2v4h4"/>
-                  <path d="M8 18l-4-4 4-4"/>
-                </svg>
-              </div>
-              <span className="text-lg font-black tracking-tight text-gray-900">
-                Clean<span className="text-gray-400">clip</span>
+            <div className="mb-6 group cursor-pointer">
+              <span className="text-xl font-black tracking-tight text-gray-900 group-hover:text-black transition-colors">
+                Clean<span className="text-gray-400 group-hover:text-gray-600">clip</span>
               </span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed font-medium m-0">
