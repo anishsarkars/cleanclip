@@ -427,7 +427,21 @@ async def startup():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "ready": rembg_session is not None}
+    db_status = "error"
+    try:
+        if supabase:
+            # Test query
+            supabase.table("guests").select("count").limit(1).execute()
+            db_status = "connected"
+    except Exception as e:
+        print(f"❌ Health-DB connection error: {e}")
+        db_status = f"error: {str(e)[:50]}"
+        
+    return {
+        "status": "ok", 
+        "ready": rembg_session is not None,
+        "database": db_status
+    }
 
 
 @app.post("/remove-bg")
