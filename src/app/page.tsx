@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { processVideoBackground } from "@/utils/videoProcessor";
 import Navbar from "./components/Navbar";
 import HeroSection from "./components/HeroSection";
 import ProcessingScreen from "./components/ProcessingScreen";
@@ -43,6 +42,8 @@ export default function Home() {
   const [originalUrl, setOriginalUrl] = useState("");
   const [processedUrl, setProcessedUrl] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [jobId, setJobId] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const initGuest = () => {
@@ -113,6 +114,53 @@ export default function Home() {
     syncWithBackend();
   }, [isLoaded, user]);
 
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
+  const pollStatus = useCallback((jobId: string) => {
+    stopPolling();
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`${API}/status/${jobId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        setProgress(data.progress ?? 0);
+        setStep(data.step ?? "Processing…");
+
+        if (data.status === "done") {
+          stopPolling();
+
+          // Refresh user data if logged in
+          if (token) {
+            const userRes = await fetch(`${API}/auth/me`, {
+              headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (userRes.ok) setUserInfo(await userRes.json());
+          }
+
+          const resultRes = await fetch(`${API}/result/${jobId}`);
+          if (!resultRes.ok) throw new Error("Failed to fetch result");
+          const blob = await resultRes.blob();
+          setProcessedUrl(URL.createObjectURL(blob));
+          setAppState("result");
+        } else if (data.status === "error") {
+          stopPolling();
+          setErrorMsg(data.step || "Processing failed.");
+          setAppState("error");
+        }
+      } catch (err) {
+        stopPolling();
+        setErrorMsg("Connection lost. Retrying…");
+        setAppState("error");
+      }
+    }, 1500);
+  }, [token]);
+
   // 2. Payment Integration
   useEffect(() => {
     // DodoPayments links are handled via direct redirect in handleUpgrade
@@ -132,47 +180,55 @@ export default function Home() {
 
     setSelectedFile(file);
     setOriginalUrl(URL.createObjectURL(file));
+    setProgress(0);
+    setStep("Uploading…");
     setAppState("processing");
-    setProgress(5);
-    setStep("Initializing Magic AI...");
+
+    const form = new FormData();
+    form.append("file", file);
 
     try {
-      // 2. Start Local Processing
-      const resultUrl = await processVideoBackground(file, (status) => {
-        setProgress(status.progress);
-        setStep(status.step);
+      const headers: any = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(`${API}/remove-bg`, {
+        method: "POST",
+        headers,
+        body: form,
       });
 
-      // 3. Deduct Credit (Cloud)
-      if (user && userInfo) {
-        const res = await fetch(`${API}/deduct-credit`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` 
-          },
-          body: JSON.stringify({ job_id: "local_job" }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setUserInfo(prev => prev ? { ...prev, credits: data.remaining_credits } : null);
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.detail === "GUEST_LIMIT_REACHED") {
+          openSignIn();
+          handleReset();
+          return;
         }
-      } else {
-        // Guest usage
+        if (data.detail === "CREDITS_EXHAUSTED") {
+          setShowPaywall(true);
+          handleReset();
+          return;
+        }
+        throw new Error(data.detail || "Upload failed");
+      }
+
+      // Update Guest Usage locally if not logged in
+      if (!user) {
         const today = new Date().toISOString().split('T')[0];
         const newCount = guestUsage + 1;
         setGuestUsage(newCount);
         localStorage.setItem(GUEST_USAGE_KEY, JSON.stringify({ date: today, count: newCount }));
+      } else {
+        setUserInfo(prev => prev ? { ...prev, credits: data.remaining_credits } : null);
       }
 
-      setProcessedUrl(resultUrl);
-      setAppState("result");
+      setJobId(data.job_id);
+      pollStatus(data.job_id);
     } catch (err: any) {
-      console.error("Client processing failed:", err);
-      setErrorMsg(err.message || "Something went wrong with the AI Engine. Please try a shorter video.");
+      setErrorMsg(err.message);
       setAppState("error");
     }
-  }, [user, userInfo, guestUsage, token, openSignIn]);
+  }, [user, userInfo, guestUsage, token, openSignIn, pollStatus]);
 
   const handleReset = useCallback(() => {
     setAppState("idle");
@@ -196,27 +252,35 @@ export default function Home() {
       return;
     }
 
-    try {
-      const res = await fetch(`${API}/payments/create-checkout`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
-        },
-        body: JSON.stringify({ plan }),
-      });
-      
-      const data = await res.json();
-      if (res.ok && data.checkout_url) {
-        window.location.href = data.checkout_url;
-      } else if (res.ok && plan === "free") {
-        setUserInfo(prev => prev ? { ...prev, plan: "free", credits: data.credits } : null);
-        setShowOnboarding(false);
-      } else {
-        alert(data.detail || "Payment integration error. Please try again later.");
-      }
-    } catch (err) {
-      alert("Could not connect to payment gateway.");
+    if (plan === "free") {
+      try {
+        const res = await fetch(`${API}/payments/create-checkout`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
+          },
+          body: JSON.stringify({ plan }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setUserInfo(prev => prev ? { ...prev, plan: "free", credits: data.credits } : null);
+          setShowOnboarding(false);
+        }
+      } catch (err) {}
+      return;
+    }
+
+    const STATIC_LINKS: Record<string, string> = {
+      monthly: "https://checkout.dodopayments.com/buy/pdt_0NalSjZWHhamGs4oYJvTe?quantity=99",
+      yearly: "https://checkout.dodopayments.com/buy/pdt_0NalSUMsJzvscQl8QNvVM?quantity=99",
+    };
+
+    const link = STATIC_LINKS[plan];
+    if (link) {
+      window.location.href = link;
+    } else {
+      alert("Invalid plan selected");
     }
   };
 

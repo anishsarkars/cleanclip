@@ -318,15 +318,42 @@ async def webhook(request: Request):
             payload = data.get("data", {})
             metadata = payload.get("metadata", {})
             user_id = metadata.get("user_id")
-            plan = metadata.get("plan", "monthly")
+            plan = metadata.get("plan") # From metadata if it exists
+            
+            # If no plan in metadata, determine from product_id
+            product_id = payload.get("product_id")
+            if not plan:
+                if product_id == DODO_PRODUCT_ID_MONTHLY: plan = "monthly"
+                elif product_id == DODO_PRODUCT_ID_YEARLY: plan = "yearly"
+                else: plan = "monthly" # Default fallback
             
             if user_id:
-                print(f"✅ DodoPayments Success: Upgrading user {user_id} to {plan}")
+                print(f"✅ Dodo Success (ID): Upgrading {user_id} to {plan}")
                 update_user_by_id(user_id, {
                     "plan": plan,
-                    "credits": PLAN_CREDITS.get(plan, 50),
-                    "last_reset": datetime.now().isoformat(),
+                    "credits_remaining": PLAN_CREDITS.get(plan, 50),
+                    "credits_total": PLAN_CREDITS.get(plan, 50),
+                    "last_reset_date": datetime.now().isoformat(),
                 })
+            else:
+                # Fallback to Email Matching (for Static Links)
+                customer = payload.get("customer", {})
+                email = customer.get("email")
+                if email:
+                    print(f"✅ Dodo Success (Email): Match {email} for plan {plan}")
+                    user = get_user_by_email(email)
+                    if user:
+                        update_user_by_id(user["clerk_user_id"], {
+                            "plan": plan,
+                            "credits_remaining": PLAN_CREDITS.get(plan, 50),
+                            "credits_total": PLAN_CREDITS.get(plan, 50),
+                            "last_reset_date": datetime.now().isoformat(),
+                        })
+                        print(f"💰 Credits applied to {email}")
+                    else:
+                        print(f"❌ User not found for email: {email}")
+                else:
+                    print("❌ No user_id or email found in Dodo webhook")
 
         # Razorpay: payment.captured or subscription.charged
         elif event in ("payment.captured", "subscription.charged"):
@@ -416,12 +443,14 @@ async def remove_bg(
         remaining = 3 - rec["count"] - 1
     else:
         if user["plan"] == "none":
-            raise HTTPException(status_code=403, detail="ONBOARDING_REQUIRED")
-        if user["credits"] <= 0:
+            # Allow some free credits even if plan is none
+            if user["credits_remaining"] <= 0:
+                raise HTTPException(status_code=403, detail="ONBOARDING_REQUIRED")
+        if user["credits_remaining"] <= 0:
             raise HTTPException(status_code=403, detail="CREDITS_EXHAUSTED")
         # Do not deduct on upload. 
         job_plan = user["plan"]
-        remaining = user["credits"]
+        remaining = user["credits_remaining"]
 
     # ── Queue Job ──
     job_id = str(uuid.uuid4())
