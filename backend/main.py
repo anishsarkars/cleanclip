@@ -321,12 +321,12 @@ async def webhook(request: Request):
         data = await request.json()
         event = data.get("type") or data.get("event") or ""
         
-        # DodoPayments: checkout.paid
-        if event == "checkout.paid":
+        # DodoPayments Events
+        if event in ("checkout.paid", "checkout.fulfilled", "order.paid", "order.completed"):
             payload = data.get("data", {})
             metadata = payload.get("metadata", {})
             user_id = metadata.get("user_id")
-            plan = metadata.get("plan") # From metadata if it exists
+            plan = metadata.get("plan")
             
             # If no plan in metadata, determine from product_id
             product_id = payload.get("product_id")
