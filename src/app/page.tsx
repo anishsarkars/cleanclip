@@ -193,10 +193,11 @@ export default function Home() {
     // 1. Check Guest Limit
     if (!user || !userInfo) {
       if (guestUsage >= 3) {
-        openSignIn();
+        if (!user) openSignIn();
         return;
       }
-    } else if (userInfo.credits <= 0) {
+    }
+    else if (userInfo.credits <= 0) {
       setShowPaywall(true);
       return;
     }
@@ -223,7 +224,8 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) {
         if (data.detail === "GUEST_LIMIT_REACHED") {
-          openSignIn();
+          if (!user) openSignIn();
+          else setErrorMsg("Guest limit reached. Please refresh to sync your account.");
           handleReset();
           return;
         }
