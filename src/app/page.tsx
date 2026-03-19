@@ -196,16 +196,27 @@ export default function Home() {
       return;
     }
 
-    const DODOPAYMENTS_LINKS: Record<string, string> = {
-      monthly: "https://checkout.dodopayments.com/buy/pdt_0NalSjZWHhamGs4oYJvTe?quantity=99",
-      yearly: "https://checkout.dodopayments.com/buy/pdt_0NalSUMsJzvscQl8QNvVM?quantity=99",
-    };
-
-    const link = DODOPAYMENTS_LINKS[plan];
-    if (link) {
-      window.location.href = link;
-    } else {
-      alert("Invalid plan selected");
+    try {
+      const res = await fetch(`${API}/payments/create-checkout`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify({ plan }),
+      });
+      
+      const data = await res.json();
+      if (res.ok && data.checkout_url) {
+        window.location.href = data.checkout_url;
+      } else if (res.ok && plan === "free") {
+        setUserInfo(prev => prev ? { ...prev, plan: "free", credits: data.credits } : null);
+        setShowOnboarding(false);
+      } else {
+        alert(data.detail || "Payment integration error. Please try again later.");
+      }
+    } catch (err) {
+      alert("Could not connect to payment gateway.");
     }
   };
 

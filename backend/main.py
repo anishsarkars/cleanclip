@@ -25,6 +25,7 @@ from PIL import Image, ImageSequence, ImageDraw, ImageFont
 from rembg import new_session, remove
 from supabase import create_client, Client
 from dotenv import load_dotenv
+import httpx
 
 load_dotenv()
 
@@ -45,8 +46,13 @@ SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# DodoPayments Config
+DODO_SECRET_KEY = os.environ.get("DODO_SECRET_KEY")
+DODO_PRODUCT_ID_MONTHLY = os.environ.get("DODO_PRODUCT_ID_MONTHLY", "pdt_0NalSjZWHhamGs4oYJvTe")
+DODO_PRODUCT_ID_YEARLY = os.environ.get("DODO_PRODUCT_ID_YEARLY", "pdt_0NalSUMsJzvscQl8QNvVM")
+
 PLAN_CREDITS = {
-    "free": 10,
+    "free": 15,
     "monthly": 50,
     "yearly": 50,
 }
@@ -223,15 +229,17 @@ def get_me(authorization: str = Header(None)):
     }
 
 
-@app.post("/auth/select-plan")
-def select_plan(body: PlanSelection, authorization: str = Header(...)):
+@app.post("/payments/create-checkout")
+async def create_checkout(body: PlanSelection, authorization: str = Header(...)):
+    """Create a DodoPayments Checkout with User Metadata."""
     user = get_current_user(authorization)
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
     if body.plan == "free":
+        # Handle free onboarding
         credits = PLAN_CREDITS["free"]
-        updated = update_user_by_id(user["clerk_user_id"], {
+        update_user_by_id(user["clerk_user_id"], {
             "plan": "free",
             "credits_remaining": credits,
             "credits_total": credits,
@@ -239,25 +247,37 @@ def select_plan(body: PlanSelection, authorization: str = Header(...)):
         })
         return {"status": "success", "plan": "free", "credits": credits}
 
-    elif body.plan in ("monthly", "yearly"):
-        amount = PLAN_AMOUNT_PAISE[body.plan]
+    # Payment link generation via Dodo API
+    product_id = DODO_PRODUCT_ID_MONTHLY if body.plan == "monthly" else DODO_PRODUCT_ID_YEARLY
+    
+    # Metadata includes User ID for webhook sync
+    payload = {
+        "product_id": product_id,
+        "quantity": 1,
+        "metadata": {
+            "user_id": user["clerk_user_id"],
+            "plan": body.plan
+        },
+        "return_url": "https://cleanclip.vercel.app/result/success"
+    }
+
+    async with httpx.AsyncClient() as client:
         try:
-            order = rzp_client.order.create({
-                "amount": amount,
-                "currency": "INR",
-                "receipt": f"rcpt_{user['id']}_{int(time.time())}",
-                "notes": {"user_id": user["id"], "plan": body.plan},
-            })
-            return {
-                "order_id": order["id"],
-                "amount": amount,
-                "currency": "INR",
-                "rzp_key": RAZORPAY_KEY_ID,
-            }
+            # Dodo URL: https://api.dodopayments.com/v1/checkouts
+            resp = await client.post(
+                "https://api.dodopayments.com/v1/checkouts",
+                json=payload,
+                headers={"Authorization": f"Bearer {DODO_SECRET_KEY}"}
+            )
+            if resp.status_code != 200:
+                print(f"❌ Dodo API Error: {resp.text}")
+                raise HTTPException(status_code=500, detail="Could not create payment session")
+            
+            data = resp.json()
+            return {"checkout_url": data.get("url")}
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Razorpay error: {e}")
-    else:
-        raise HTTPException(status_code=400, detail="Invalid plan")
+            print(f"❌ Payment Error: {e}")
+            raise HTTPException(status_code=500, detail="Internal Payment Error")
 
 # ──────────────────────────────────────────────
 # Razorpay Payment Verification

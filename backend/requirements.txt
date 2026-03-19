@@ -12,3 +12,5 @@ razorpay
 bcrypt
 supabase
 python-dotenv
+
+httpx
