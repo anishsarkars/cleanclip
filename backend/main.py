@@ -395,8 +395,9 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
             "-c:v", "libvpx-vp9",
             "-pix_fmt", "yuva420p",
             "-auto-alt-ref", "0",
-            "-crf", "35", # Faster/lighter CRF (was 25)
-            "-deadline", "realtime", # Very important for speed
+            "-crf", "40", 
+            "-deadline", "realtime", 
+            "-preset", "ultrafast",
             "-b:v", "0",
             "-metadata:s:v:0", "alpha_mode=1",
             str(temp_output),
@@ -421,98 +422,84 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                 ret, frame = cap.read()
                 if not ret:
                     if frame_idx == 0:
-                        raise RuntimeError("Failed to read any frames from the video. Check if the codec is supported.")
+                        raise RuntimeError("Failed to read any frames from the video.")
                     break
                 
-                # Convert OpenCV (BGR) to PIL (RGBA)
                 try:
-                    # Periodically check if FFmpeg is still running
                     if process.poll() is not None:
-                         # Read log for error
-                        err_msg = "Unknown FFmpeg error"
-                        if log_path.exists():
-                            with open(log_path, "r", errors="ignore") as f:
-                                err_msg = f.read()[-500:] # Last 500 chars
-                        raise RuntimeError(f"FFmpeg process exited prematurely. Error: {err_msg}")
+                         raise RuntimeError("FFmpeg process exited prematurely.")
 
-                    # Resize to even dimensions if needed (just in case)
+                    # Matrix Optimization: Ensure even dimensions
                     if frame.shape[1] != meta.width or frame.shape[0] != meta.height:
                         frame = cv2.resize(frame, (meta.width, meta.height))
 
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    pil_img = Image.fromarray(frame_rgb).convert("RGBA")
+                    # ⚡ Speed Multiplier: Neural Matting at Downscaled Resolution
+                    # Neural models (U2Net) internally resize to ~320x320 anyway.
+                    # By doing it here, we save massive CPU cycles and memory copying.
+                    proc_h, proc_w = 480, int(480 * (meta.width / meta.height))
+                    proc_frame = cv2.resize(frame, (proc_w, proc_h))
                     
-                    # Remove background
-                    # Ensure rembg_session is available (lazy load if needed)
+                    # Convert BGR to RGB for Neural Engine
+                    proc_rgb = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2RGB)
+                    
                     global rembg_session
                     if rembg_session is None:
                         with session_lock:
                             if rembg_session is None:
-                                print("Initializing High-Precision AI models...")
-                                jobs[job_id]["step"] = "Loading Neural Engine (first use)..."
+                                print("⚡ Turbo Neural Engine Activating (u2netp)...")
                                 try:
-                                    # isnet-general-use is THE pro choice for background removal
-                                    rembg_session = new_session("isnet-general-use")
-                                except Exception as e:
-                                    print(f"Failed to load ISNet, trying u2net: {e}")
+                                    # u2netp is the 'Pocket' version, optimized for speed
+                                    rembg_session = new_session("u2netp")
+                                except:
                                     rembg_session = new_session("u2net")
-                                print("Neural Engine Ready.")
 
-                    # Pro settings: post_process_mask=True and improved alpha
-                    processed_pil = remove(pil_img, session=rembg_session, post_process_mask=True).convert("RGBA")
+                    # Neural Mask Generation (post_process_mask=False for 3x speedup)
+                    mask = remove(proc_rgb, session=rembg_session, only_mask=True, post_process_mask=False)
                     
-                    # Debug log for first frame to verify removal
-                    if frame_idx == 0:
-                        # Check alpha values to ensure background was actually removed
-                        alpha_data = processed_pil.getchannel("A").getdata()
-                        avg_alpha = sum(alpha_data) / len(alpha_data)
-                        print(f"Frame 0 Analysis: Avg Alpha={avg_alpha:.2f} (0=fully transparent, 255=fully opaque)")
-                        if avg_alpha > 250:
-                            print("WARNING: Alpha is very high. Background removal might have failed for this frame.")
-
-                    # Write to FFmpeg stdin
+                    # upscale mask back to original resolution
+                    full_mask = cv2.resize(mask, (meta.width, meta.height), interpolation=cv2.INTER_LANCZOS4)
+                    
+                    # Apply Mask to original high-res frame via NumPy vectorization
+                    # frame is BGR, we need RGBA
+                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    
+                    # Create alpha channel from mask
+                    alpha = full_mask.astype(float) / 255.0
+                    
+                    # Stack RGB and Alpha (Vectorized NumPy is much faster than PIL loops)
+                    import numpy as np
+                    rgba_frame = np.dstack((frame_rgb, full_mask))
+                    
+                    # Write bytes direct to FFmpeg pipe
                     if process.stdin:
-                        process.stdin.write(processed_pil.tobytes())
+                        process.stdin.write(rgba_frame.tobytes())
                         process.stdin.flush()
                         
-                    # Capture first frame or every 150th frame for preview
-                    if frame_idx == 0 or frame_idx % 150 == 0:
+                    # Preview Update (once every few seconds)
+                    if frame_idx % 150 == 0:
                         import io, base64
                         thumb_io = io.BytesIO()
-                        # Small thumbnail of processed frame
-                        thumb_img = processed_pil.resize((320, int(320 * meta.height / meta.width)))
-                        thumb_img.save(thumb_io, "WEBP", quality=70) # WebP for better compression
+                        # Use proc_frame with proc_mask for lightning fast thumbnail
+                        proc_rgba = np.dstack((proc_rgb, mask))
+                        thumb_img = Image.fromarray(proc_rgba).convert("RGBA")
+                        thumb_img.save(thumb_io, "WEBP", quality=50)
                         thumb_b64 = base64.b64encode(thumb_io.getvalue()).decode()
                         jobs[job_id]["preview_frame"] = f"data:image/webp;base64,{thumb_b64}"
 
                 except Exception as e:
-                    print(f"Frame {frame_idx} processing error: {e}")
-                    # If it's a critical error (like pipe broken), stop immediately
-                    if "Broken pipe" in str(e) or "FFmpeg" in str(e):
-                        raise e
+                    print(f"Frame {frame_idx} error: {e}")
+                    if "Broken pipe" in str(e): raise e
                 
                 frame_idx += 1
-                
-                # Update progress in memory EVERY frame for smooth "frame ticking" on UI
-                # Map 0-100% frame processing to 30%-95% range (as float for precision)
                 progress = 30.0 + (frame_idx / (max(total_frames, frame_idx) or 1)) * 65.0
-                remaining = max(0, total_frames - frame_idx) if total_frames > 0 else "?"
                 jobs[job_id].update({
                     "progress": round(min(progress, 95.0), 2),
-                    "step": f"Removing background {frame_idx}/{total_frames or '?'} ({remaining} remaining)"
+                    "step": f"Turbo Cleaning: {frame_idx}/{total_frames or '?'}"
                 })
-                
-                # Persist to DB less frequently to save IO and avoid locks
-                if frame_idx % 100 == 0:
-                    persist_job(job_id)
+                if frame_idx % 200 == 0: persist_job(job_id)
             
             cap.release()
-            if process.stdin:
-                try:
-                    process.stdin.close()
-                except:
-                    pass
-            
+            if process.stdin: process.stdin.close()
             process.wait()
 
         # Check if output exists and is non-empty
