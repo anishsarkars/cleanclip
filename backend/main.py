@@ -31,12 +31,15 @@ BASE_DIR = Path(__file__).resolve().parent
 UPLOADS_DIR = BASE_DIR / "uploads"
 OUTPUTS_DIR = BASE_DIR / "outputs"
 DB_PATH = BASE_DIR / "cleanclip.db"
-MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20MB - Safer for free-tier environments
+MAX_UPLOAD_BYTES = 100 * 1024 * 1024  # 100MB - Chunks will bypass the 413 limit
+CHUNK_DIR = BASE_DIR / "chunks"
 ALLOWED_SUFFIXES = {".mp4", ".mov", ".webm", ".gif"}
-PLAN_LIMITS = {"none": 0, "free": 10, "monthly": 50, "yearly": 50}
+PLAN_LIMITS = {"none": 0, "free": 3, "monthly": 50, "yearly": 50}
 
 for directory in (UPLOADS_DIR, OUTPUTS_DIR):
-    directory.mkdir(parents=True, exist_ok=True)
+    UPLOADS_DIR.mkdir(exist_ok=True)
+    OUTPUTS_DIR.mkdir(exist_ok=True)
+    CHUNK_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(title="CleanClip API", version="4.0.0")
 app.add_middleware(
@@ -448,8 +451,16 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                                     rembg_session = new_session("u2net")
                                 print("Neural Engine Ready.")
 
-                    # Pro settings: post_process_mask=True and improved alpha
-                    processed_pil = remove(pil_img, session=rembg_session, post_process_mask=True).convert("RGBA")
+                    # Pro settings: alpha-matting is THE key to smooth professional edges
+                    processed_pil = remove(
+                        pil_img, 
+                        session=rembg_session, 
+                        post_process_mask=True,
+                        alpha_matting=True,
+                        alpha_matting_foreground_threshold=240,
+                        alpha_matting_background_threshold=10,
+                        alpha_matting_erode_size=10
+                    ).convert("RGBA")
                     
                     # Debug log for first frame to verify removal
                     if frame_idx == 0:
@@ -632,6 +643,61 @@ def select_plan(payload: SelectPlanRequest) -> dict[str, Any]:
         "credits_remaining": user["credits_remaining"],
         "last_reset_date": user["last_reset_date"],
     }
+
+
+@app.post("/upload-chunk")
+async def upload_chunk(
+    job_id: str = Form(...),
+    chunk_index: int = Form(...),
+    file: UploadFile = File(...),
+):
+    chunk_path = CHUNK_DIR / f"{job_id}_{chunk_index}"
+    with open(chunk_path, "wb") as f:
+        f.write(await file.read())
+    return {"status": "ok"}
+
+
+@app.post("/finalize-upload")
+async def finalize_upload(
+    background_tasks: BackgroundTasks,
+    job_id: str = Form(...),
+    filename: str = Form(...),
+    total_chunks: int = Form(...),
+    clerk_user_id: str = Form(None),
+    guest_id: str = Form(None),
+):
+    # Assemble chunks
+    final_path = UPLOADS_DIR / f"{job_id}{Path(filename).suffix}"
+    with open(final_path, "wb") as final_file:
+        for i in range(total_chunks):
+            chunk_path = CHUNK_DIR / f"{job_id}_{i}"
+            if not chunk_path.exists():
+                raise HTTPException(status_code=400, detail="Missing chunk data.")
+            with open(chunk_path, "rb") as cf:
+                final_file.write(cf.read())
+            chunk_path.unlink() # Cleanup chunk
+
+    # Validate size & credits before starting background task
+    size = final_path.stat().st_size
+    if size > MAX_UPLOAD_BYTES:
+        final_path.unlink()
+        raise HTTPException(status_code=413, detail="File too large.")
+
+    # Same logic as original /process-video but using pre-saved file
+    jobs[job_id] = {
+        "id": job_id,
+        "user_id": clerk_user_id,
+        "filename": filename,
+        "status": "queued",
+        "progress": 30,
+        "step": "Analyzing video...",
+        "output_path": None,
+        "error": None,
+        "created_at": now_iso(),
+    }
+    persist_job(job_id)
+    background_tasks.add_task(_process_job, job_id, final_path, clerk_user_id, guest_id)
+    return {"status": "ok", "job_id": job_id}
 
 
 @app.post("/process-video")

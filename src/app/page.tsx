@@ -164,76 +164,70 @@ export default function Home() {
       setSelectedFile(file);
       setOriginalUrl(URL.createObjectURL(file));
       setAppState("processing");
-      setStep("Starting upload...");
+      setStep("Initializing upload...");
       setProgress(0);
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-        if (user) formData.append("clerk_user_id", user.id);
+        const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunks
+        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${API}/process-video`, true);
+        for (let i = 0; i < totalChunks; i++) {
+          const start = i * CHUNK_SIZE;
+          const end = Math.min(file.size, start + CHUNK_SIZE);
+          const chunk = file.slice(start, end);
 
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 30);
-            setProgress(percent);
-            const uploadPercent = Math.round((event.loaded / event.total) * 100);
-            if (uploadPercent < 100) {
-              setStep(`Uploading (${uploadPercent}%)`);
-            } else {
-              setStep("Finalizing upload...");
-            }
+          const formData = new FormData();
+          formData.append("file", chunk);
+          formData.append("job_id", jobId);
+          formData.append("chunk_index", i.toString());
+
+          setStep(`Uploading (${Math.round((i / totalChunks) * 100)}%)`);
+          
+          const response = await fetch(`${API}/upload-chunk`, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || "Chunk upload failed.");
           }
-        };
 
-        xhr.onload = async () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            const data = JSON.parse(xhr.responseText);
-            setStep("Ready to process...");
-            setProgress(30);
-            pollStatus(data.job_id);
-          } else {
-            let errorDetail = "Upload failed.";
-            try {
-              const errorData = JSON.parse(xhr.responseText);
-              errorDetail = errorData.detail || errorDetail;
-              
-              if (errorDetail === "ONBOARDING_REQUIRED") {
-                await syncUser();
-                setAppState("idle");
-                return;
-              }
-              if (errorDetail === "CREDITS_EXHAUSTED") {
-                setShowPaywall(true);
-                setAppState("idle");
-                return;
-              }
-              if (errorDetail === "GUEST_LIMIT_REACHED") {
-                openSignUp();
-                setAppState("idle");
-                return;
-              }
-            } catch { }
-            
-            setErrorMsg(errorDetail);
-            setAppState("error");
-          }
-        };
+          // Map 0-100% chunks to 0-30% on the global progress bar
+          setProgress(Math.round(((i + 1) / totalChunks) * 30));
+        }
 
-        xhr.onerror = () => {
-          setErrorMsg("Network error during upload.");
-          setAppState("error");
-        };
+        setStep("Finalizing stream...");
+        const finalizeData = new FormData();
+        finalizeData.append("job_id", jobId);
+        finalizeData.append("filename", file.name);
+        finalizeData.append("total_chunks", totalChunks.toString());
+        if (user) finalizeData.append("clerk_user_id", user.id);
+        
+        const finalizeRes = await fetch(`${API}/finalize-upload`, {
+          method: "POST",
+          body: finalizeData,
+        });
 
-        xhr.send(formData);
+        if (!finalizeRes.ok) {
+           const err = await finalizeRes.json();
+           if (err.detail === "CREDITS_EXHAUSTED") {
+             setShowPaywall(true); setAppState("idle"); return;
+           }
+           throw new Error(err.detail || "Finalization failed.");
+        }
+
+        setStep("Ready to process...");
+        setProgress(30);
+        pollStatus(jobId);
+
       } catch (error) {
         setErrorMsg(error instanceof Error ? error.message : "Initialization failed.");
         setAppState("error");
       }
     },
-    [openSignUp, pollStatus, syncUser, user, userInfo?.plan],
+    [pollStatus, user, userInfo?.plan],
   );
 
   const handlePlanSelection = useCallback(
