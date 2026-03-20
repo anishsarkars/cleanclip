@@ -140,9 +140,13 @@ def _get_video_meta(path: Path) -> VideoMeta:
         raise RuntimeError("Could not open uploaded file.")
     fps = capture.get(cv2.CAP_PROP_FPS) or 24.0
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    
+    # Ensure width and height are even for FFmpeg yuva420p compatibility
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
     height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
-    
+    if width % 2 != 0: width -= 1
+    if height % 2 != 0: height -= 1
+
     # Fallback for frame count if metadata is missing (common in some formats)
     if frame_count <= 0:
         print(f"Metadata reported 0 frames for {path.name}, attempting estimation...")
@@ -150,7 +154,7 @@ def _get_video_meta(path: Path) -> VideoMeta:
         pass
 
     capture.release()
-    return VideoMeta(fps=max(fps, 1.0), frame_count=max(frame_count, 0), width=width, height=height)
+    return VideoMeta(fps=max(fps, 1.0), frame_count=max(frame_count, 0), width=max(width, 2), height=max(height, 2))
 
 
 def _run_ffmpeg(command: list[str]) -> None:
@@ -395,6 +399,10 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                                 err_msg = f.read()[-500:] # Last 500 chars
                         raise RuntimeError(f"FFmpeg process exited prematurely. Error: {err_msg}")
 
+                    # Resize to even dimensions if needed (just in case)
+                    if frame.shape[1] != meta.width or frame.shape[0] != meta.height:
+                        frame = cv2.resize(frame, (meta.width, meta.height))
+
                     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     pil_img = Image.fromarray(frame_rgb).convert("RGBA")
                     
@@ -404,21 +412,32 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                     if rembg_session is None:
                         with session_lock:
                             if rembg_session is None:
-                                print("Initializing rembg session (isnet-general-use) for current thread...")
+                                print("Initializing rembg session (u2net) for current thread...")
                                 try:
-                                    rembg_session = new_session("isnet-general-use")
-                                except:
                                     rembg_session = new_session("u2net")
+                                except Exception as e:
+                                    print(f"Failed to load u2net, trying isnet-general-use: {e}")
+                                    rembg_session = new_session("isnet-general-use")
 
-                    processed_pil = remove(pil_img, session=rembg_session).convert("RGBA")
+                    # Use post_process_mask=True for much cleaner edges (less background bleed)
+                    processed_pil = remove(pil_img, session=rembg_session, post_process_mask=True).convert("RGBA")
                     
+                    # Debug log for first frame to verify removal
+                    if frame_idx == 0:
+                        # Check alpha values to ensure background was actually removed
+                        alpha_data = processed_pil.getchannel("A").getdata()
+                        avg_alpha = sum(alpha_data) / len(alpha_data)
+                        print(f"Frame 0 Analysis: Avg Alpha={avg_alpha:.2f} (0=fully transparent, 255=fully opaque)")
+                        if avg_alpha > 250:
+                            print("WARNING: Alpha is very high. Background removal might have failed for this frame.")
+
                     # Write to FFmpeg stdin
                     if process.stdin:
                         process.stdin.write(processed_pil.tobytes())
                         process.stdin.flush()
                         
-                    # Capture first frame or every 100th frame for preview
-                    if frame_idx == 0 or frame_idx % 100 == 0:
+                    # Capture first frame or every 150th frame for preview
+                    if frame_idx == 0 or frame_idx % 150 == 0:
                         import io, base64
                         thumb_io = io.BytesIO()
                         # Small thumbnail of processed frame
