@@ -14,7 +14,7 @@ from typing import Any
 
 import cv2
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Request, UploadFile, Header
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, Request, UploadFile, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from PIL import Image
