@@ -3,8 +3,13 @@
 import Link from "next/link";
 import { UserButton, useClerk, useUser } from "@clerk/nextjs";
 import Logo from "./Logo";
+import { Crown, Star } from "lucide-react";
 
-export default function Navbar() {
+interface NavbarProps {
+  userPlan?: string;
+}
+
+export default function Navbar({ userPlan }: NavbarProps) {
   const { user, isLoaded } = useUser();
   const { openSignIn } = useClerk();
 
@@ -24,7 +29,19 @@ export default function Navbar() {
 
       <div className="flex items-center gap-4">
         {user ? (
-          <UserButton />
+          <>
+            {(userPlan === "pro" || userPlan === "lifetime") && (
+              <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${
+                userPlan === "lifetime" 
+                  ? "bg-amber-500/10 border-amber-500/30 text-amber-500" 
+                  : "bg-blue-500/10 border-blue-500/30 text-blue-500"
+              }`}>
+                {userPlan === "lifetime" ? <Crown className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
+                {userPlan}
+              </div>
+            )}
+            <UserButton />
+          </>
         ) : (
           <button
             onClick={() => openSignIn()}

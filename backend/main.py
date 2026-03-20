@@ -732,7 +732,8 @@ async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -
         payload = data.get("data", {})
         
         # DodoPayments passes client_reference_id which we mapped to Clerk User ID
-        clerk_user_id = payload.get("client_reference_id")
+        # Check direct payload or nested metadata just in case
+        clerk_user_id = payload.get("client_reference_id") or payload.get("metadata", {}).get("client_reference_id")
         
         if event_type == "payment.succeeded" and clerk_user_id:
             # Map Product IDs to 'Pro' and 'Lifetime' tiers
@@ -753,15 +754,18 @@ async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -
                 email = payload.get("customer_email", "paid@user.com")
                 now = now_iso()
                 
-                # Grant Credits Securely
+                # Upsert User/Grant Credits Securely
                 with db() as connection:
                     connection.execute(
                         """
-                        UPDATE users 
-                        SET plan = ?, credits_remaining = credits_remaining + ?, updated_at = ?
-                        WHERE clerk_user_id = ?
+                        INSERT INTO users (clerk_user_id, email, plan, credits_remaining, last_reset_date, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(clerk_user_id) DO UPDATE SET
+                            plan = excluded.plan,
+                            credits_remaining = credits_remaining + excluded.credits_remaining,
+                            updated_at = excluded.updated_at
                         """,
-                        (plan, credits_to_add, now, clerk_user_id),
+                        (clerk_user_id, email, plan, credits_to_add, now, now, now),
                     )
                 print(f"💰 SECURE PAYMENT SUCCESS: Granted {credits_to_add} to {clerk_user_id} (Plan: {plan})")
                 

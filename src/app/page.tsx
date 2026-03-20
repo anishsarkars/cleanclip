@@ -46,6 +46,7 @@ export default function Home() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const syncUser = useCallback(async () => {
@@ -70,6 +71,17 @@ export default function Home() {
 
   useEffect(() => {
     if (!isLoaded) return;
+    
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("success") === "true") {
+      setNotification({
+        type: "success",
+        message: "Payment successfully! Please be patient, your credits will be active in under 4 hours (usually instant)."
+      });
+      // Clear URL params
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     if (!user) {
       setUserInfo(null);
       return;
@@ -273,8 +285,8 @@ export default function Home() {
               ? "pdt_0NalSjZWHhamGs4oYJvTe" 
               : "pdt_0NavT6EYIyVG412m2MHm7";
           
-          const isTest = plan === "lifetime"; // Use test domain for lifetime special as requested
-          const returnUrl = encodeURIComponent(`${window.location.origin}`);
+          const isTest = plan === "lifetime";
+          const returnUrl = encodeURIComponent(`${window.location.origin}?success=true`);
           const baseUrl = isTest ? "test.checkout.dodopayments.com" : "checkout.dodopayments.com";
           
           let checkoutUrl = `https://${baseUrl}/buy/${productId}?client_reference_id=${user.id}&return_url=${returnUrl}`;
@@ -321,7 +333,24 @@ export default function Home() {
         <div className="relative overflow-hidden bg-black rounded-none">
           
           {/* Immersive Cleanup: Hide Nav during critical processing to focus on the 'Clean UI' */}
-          {appState !== "processing" && <Navbar />}
+          {appState !== "processing" && <Navbar userPlan={userInfo?.plan} />}
+
+          {/* 🔔 Premium Notification Toast */}
+          {notification && (
+            <div className="fixed top-24 md:top-32 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-6 animate-fade-in">
+              <div className={`p-4 md:p-5 rounded-[32px] border shadow-[0_40px_80px_rgba(0,0,0,0.1)] backdrop-blur-3xl flex flex-col gap-1 ${
+                notification.type === "success" 
+                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
+                  : "bg-rose-500/10 border-rose-500/20 text-rose-400"
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="font-black uppercase tracking-[0.2em] text-[10px] opacity-60">System Notification</span>
+                  <button onClick={() => setNotification(null)} className="text-[10px] font-black opacity-40 hover:opacity-100 uppercase tracking-widest px-2">Dismiss</button>
+                </div>
+                <p className="text-[14px] md:text-[15px] font-bold leading-relaxed">{notification.message}</p>
+              </div>
+            </div>
+          )}
 
           {showOnboarding && (
             <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
