@@ -124,9 +124,15 @@ export default function Home() {
 
           if (data.status === "done") {
             stopPolling();
-            if (data.result_url) setProcessedUrl(`${API}${data.result_url}`);
-            if (user) await syncUser();
-            setAppState("result");
+            setProgress(100);
+            setStep("Ready!");
+            
+            // Short delay so user can see it reach 100%
+            setTimeout(async () => {
+              if (data.result_url) setProcessedUrl(`${API}${data.result_url}`);
+              if (user) await syncUser();
+              setAppState("result");
+            }, 800);
           }
 
           if (data.status === "error") {
