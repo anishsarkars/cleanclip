@@ -1,3 +1,7 @@
+"use client";
+
+import { CheckCircle2 } from "lucide-react";
+
 const PLANS = [
   {
     id: "free",
@@ -34,50 +38,47 @@ interface PricingSectionProps {
 
 export default function PricingSection({ onUpgrade }: PricingSectionProps) {
   return (
-    <section id="pricing" className="bg-[#fafafa] py-24 md:py-32">
-      <div className="section-container">
-        <div className="mb-14 text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+    <section id="pricing" className="py-32 bg-white/5 border-y border-white/10">
+      <div className="mx-auto max-w-[1240px] px-6">
+        <div className="mb-20 text-center animate-fade-in">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-white/40">
             Pricing
           </p>
-          <h2 className="m-0 text-[34px] font-semibold tracking-[-0.05em] text-zinc-950 md:text-[48px]">
-            Simple plans, no surprises
+          <h2 className="text-5xl md:text-6xl font-black tracking-[-0.03em] text-white">
+             Simple plans, <span className="text-white/40">no surprises.</span>
           </h2>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-10 lg:grid-cols-3">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`rounded-[30px] border p-8 ${
+              className={`relative rounded-[48px] p-10 flex flex-col transition-all duration-700 hover:shadow-[0_48px_140px_rgba(0,0,0,0.15)] group ${
                 plan.featured
-                  ? "border-zinc-950 bg-zinc-950 text-white"
-                  : "border-black/6 bg-white text-zinc-950"
+                  ? "glass-aero border-white shadow-2xl bg-white/20"
+                  : "bg-white/5 border-white/10 hover:bg-white/10"
               }`}
             >
-              <div className="mb-6 flex items-center justify-between">
-                <h3 className="m-0 text-2xl font-semibold tracking-[-0.04em]">{plan.name}</h3>
-                {plan.featured && (
-                  <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-white/80">
-                    Popular
-                  </span>
-                )}
+              {plan.featured && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-white text-zinc-900 px-5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.2em] shadow-xl">
+                   Most Popular
+                </div>
+              )}
+
+              <div className="mb-10">
+                 <h3 className="text-3xl font-bold tracking-tight text-white mb-2">{plan.name}</h3>
+                 <p className="text-white/50 font-medium text-base mb-10 leading-relaxed">{plan.description}</p>
+                 
+                 <div className="flex items-baseline gap-2 text-white">
+                   <span className="text-6xl font-black tracking-[-0.05em]">{plan.price}</span>
+                   <span className="text-lg font-bold opacity-30">{plan.cadence}</span>
+                 </div>
               </div>
 
-              <div className="mb-4 flex items-end gap-1">
-                <span className="text-5xl font-semibold tracking-[-0.06em]">{plan.price}</span>
-                <span className={`pb-2 text-sm ${plan.featured ? "text-white/60" : "text-zinc-400"}`}>
-                  {plan.cadence}
-                </span>
-              </div>
-
-              <p className={`mb-8 text-[15px] leading-7 ${plan.featured ? "text-white/72" : "text-zinc-500"}`}>
-                {plan.description}
-              </p>
-
-              <div className="mb-10 space-y-3">
+              <div className="mb-14 space-y-6 flex-1">
                 {plan.features.map((feature) => (
-                  <div key={feature} className={`text-sm ${plan.featured ? "text-white/80" : "text-zinc-600"}`}>
+                  <div key={feature} className="flex items-center gap-4 text-[17px] font-bold text-white/70">
+                    <CheckCircle2 className="w-5 h-5 text-blue-200" strokeWidth={3} />
                     {feature}
                   </div>
                 ))}
@@ -85,11 +86,10 @@ export default function PricingSection({ onUpgrade }: PricingSectionProps) {
 
               <button
                 onClick={() => onUpgrade(plan.id)}
-                suppressHydrationWarning
-                className={`w-full cursor-pointer rounded-full px-5 py-3.5 text-sm font-medium transition-colors ${
+                className={`w-full h-16 rounded-[24px] text-lg font-bold transition-all active:scale-95 ${
                   plan.featured
-                    ? "bg-white text-zinc-950 hover:bg-zinc-100"
-                    : "bg-zinc-950 text-white hover:bg-black"
+                    ? "bg-white text-zinc-950 hover:scale-[1.02] shadow-[0_12px_40px_rgba(255,255,255,0.2)]"
+                    : "bg-white/20 text-white hover:bg-white/30 border border-white/20"
                 }`}
               >
                 {plan.id === "free" ? "Start Free" : `Choose ${plan.name}`}

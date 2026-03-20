@@ -55,12 +55,7 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
            Our professional tool for instant background removal and<br className="hidden md:block"/> asset cleaning, offering a flawless creative pipeline.
         </p>
 
-        <button 
-           onClick={() => inputRef.current?.click()}
-           className="mb-16 rounded-full bg-white px-8 py-3.5 text-zinc-800 font-bold text-base flex items-center gap-3 shadow-xl hover:scale-105 active:scale-95 transition-all animate-fade-in delay-200"
-        >
-           Start for free <ArrowRight className="w-5 h-5" />
-        </button>
+        <div className="mb-20" /> {/* Spacer instead of button */}
 
         {/* The Aero Glow Upload Card (match exact style) */}
         <div className="w-full max-w-[720px] animate-fade-in delay-300">

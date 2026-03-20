@@ -322,8 +322,14 @@ export default function Home() {
         )}
 
         {appState === "idle" && (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in pb-20">
             <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
+            
+            <div className="space-y-32">
+               <HowItWorks />
+               <PricingSection onUpgrade={handlePlanSelection} />
+               <Footer />
+            </div>
           </div>
         )}
 
@@ -337,13 +343,16 @@ export default function Home() {
         )}
 
         {appState === "result" && selectedFile && processedUrl && (
-          <ResultSection
-            originalUrl={originalUrl}
-            processedUrl={processedUrl}
-            fileName={selectedFile.name}
-            onReset={handleReset}
-            onDownload={handleDownload}
-          />
+          <div className="animate-fade-in">
+            <ResultSection
+              originalUrl={originalUrl}
+              processedUrl={processedUrl}
+              fileName={selectedFile.name}
+              onReset={handleReset}
+              onDownload={handleDownload}
+            />
+            <Footer />
+          </div>
         )}
 
         {appState === "error" && (

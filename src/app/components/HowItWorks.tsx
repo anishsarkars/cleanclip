@@ -1,3 +1,5 @@
+"use client";
+
 const STEPS = [
   {
     title: "Upload",
@@ -15,25 +17,25 @@ const STEPS = [
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="bg-white py-24 md:py-32">
-      <div className="section-container">
-        <div className="mb-14 text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+    <section id="how-it-works" className="py-32 relative">
+      <div className="mx-auto max-w-[1240px] px-6">
+        <div className="mb-20 text-center animate-fade-in">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-white/40">
             How it works
           </p>
-          <h2 className="m-0 text-[34px] font-semibold tracking-[-0.05em] text-zinc-950 md:text-[48px]">
+          <h2 className="text-5xl md:text-6xl font-bold tracking-tight text-white mb-2">
             Three simple steps
           </h2>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-10 md:grid-cols-3">
           {STEPS.map((step, index) => (
-            <div key={step.title} className="rounded-[28px] border border-black/6 bg-zinc-50 p-8">
-              <div className="mb-8 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                0{index + 1}
+            <div key={step.title} className="glass-aero rounded-[40px] p-10 border-white/20 transition-transform duration-500 hover:-translate-y-2 group">
+              <div className="mb-10 text-xs font-bold uppercase tracking-[0.3em] text-white/30 group-hover:text-white/60 transition-colors">
+                Step 0{index + 1}
               </div>
-              <h3 className="mb-3 text-2xl font-semibold tracking-[-0.04em] text-zinc-950">{step.title}</h3>
-              <p className="m-0 text-[15px] leading-7 text-zinc-500">{step.description}</p>
+              <h3 className="mb-4 text-3xl font-bold tracking-tight text-white">{step.title}</h3>
+              <p className="m-0 text-lg leading-relaxed text-white/60 font-medium">{step.description}</p>
             </div>
           ))}
         </div>
