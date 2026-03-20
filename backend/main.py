@@ -242,8 +242,19 @@ def maybe_reset_credits(user: dict[str, Any]) -> dict[str, Any]:
 def set_user_plan(clerk_user_id: str, email: str, plan: str) -> dict[str, Any]:
     if plan not in {"free", "monthly", "yearly"}:
         raise HTTPException(status_code=400, detail="Invalid plan.")
+    
     now = now_iso()
-    credits = PLAN_LIMITS[plan]
+    user = get_user(clerk_user_id)
+    
+    # We only grant 'free' credits during onboarding (if they had 'none' before)
+    # Paid plans (monthly/yearly) credits are granted strictly via Webhook
+    credits_to_set = 0
+    if plan == "free" and (not user or user["plan"] == "none"):
+        credits_to_set = PLAN_LIMITS["free"]
+    elif user:
+        # Keep existing credits if just switching to a payment flow
+        credits_to_set = user["credits_remaining"]
+
     with db() as connection:
         connection.execute(
             """
@@ -253,10 +264,9 @@ def set_user_plan(clerk_user_id: str, email: str, plan: str) -> dict[str, Any]:
                 email = excluded.email,
                 plan = excluded.plan,
                 credits_remaining = excluded.credits_remaining,
-                last_reset_date = excluded.last_reset_date,
                 updated_at = excluded.updated_at
             """,
-            (clerk_user_id, email, plan, credits, now, now, now),
+            (clerk_user_id, email, plan, credits_to_set, now, now, now),
         )
     updated = get_user(clerk_user_id)
     if not updated:
@@ -723,7 +733,7 @@ async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -
     body = await request.body()
     secret = os.getenv("DODO_SECRET_KEY", "")
     
-    # Basic signature validation if secret is provided
+    # Signature Validation
     if secret and x_dodo_signature:
         expected_sig = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected_sig, x_dodo_signature):
@@ -734,21 +744,39 @@ async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -
         event_type = data.get("type")
         payload = data.get("data", {})
         
-        # In DodoPayments, customer_reference_id or client_reference_id is often used
-        clerk_user_id = payload.get("client_reference_id") or payload.get("customer_reference_id")
+        # DodoPayments passes client_reference_id which we mapped to Clerk User ID
+        clerk_user_id = payload.get("client_reference_id")
         
         if event_type == "payment.succeeded" and clerk_user_id:
-            # Detect plan from product id
+            # Map Product IDs to Premium Credit Tiers
             product_id = payload.get("product_id")
             plan = "none"
-            if product_id == os.getenv("DODO_PRODUCT_ID_MONTHLY"):
+            credits_to_add = 0
+            
+            # Monthly Plan: pdt_0NalSjZWHhamGs4oYJvTe
+            if product_id == "pdt_0NalSjZWHhamGs4oYJvTe":
                 plan = "monthly"
-            elif product_id == os.getenv("DODO_PRODUCT_ID_YEARLY"):
+                credits_to_add = 100
+            # Yearly Plan: pdt_0NalSUMsJzvscQl8QNvVM
+            elif product_id == "pdt_0NalSUMsJzvscQl8QNvVM":
                 plan = "yearly"
+                credits_to_add = 1200
                 
             if plan != "none":
-                set_user_plan(clerk_user_id, payload.get("customer_email", ""), plan)
-                print(f"Plan updated to {plan} for user {clerk_user_id} via webhook.")
+                email = payload.get("customer_email", "paid@user.com")
+                now = now_iso()
+                
+                # Grant Credits Securely
+                with db() as connection:
+                    connection.execute(
+                        """
+                        UPDATE users 
+                        SET plan = ?, credits_remaining = credits_remaining + ?, updated_at = ?
+                        WHERE clerk_user_id = ?
+                        """,
+                        (plan, credits_to_add, now, clerk_user_id),
+                    )
+                print(f"💰 SECURE PAYMENT SUCCESS: Granted {credits_to_add} to {clerk_user_id} (Plan: {plan})")
                 
         return JSONResponse({"status": "ok"})
     except Exception as e:
