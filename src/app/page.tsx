@@ -271,14 +271,16 @@ export default function Home() {
           const productId = 
             plan === "pro" 
               ? "pdt_0NalSjZWHhamGs4oYJvTe" 
-              : "pdt_0NavKn2G5oln4JN2cMrzM";
+              : "pdt_0NavT6EYIyVG412m2MHm7";
           
+          const isTest = plan === "lifetime"; // Use test domain for lifetime special as requested
           const returnUrl = encodeURIComponent(`${window.location.origin}`);
-          let checkoutUrl = `https://checkout.dodopayments.com/buy/${productId}?client_reference_id=${user.id}&return_url=${returnUrl}`;
+          const baseUrl = isTest ? "test.checkout.dodopayments.com" : "checkout.dodopayments.com";
           
-          // Apply the specific Special quantity parameter if it's the Lifetime deal
+          let checkoutUrl = `https://${baseUrl}/buy/${productId}?client_reference_id=${user.id}&return_url=${returnUrl}`;
+          
           if (plan === "lifetime") {
-            checkoutUrl += "&quantity=99";
+            checkoutUrl += "&quantity=1";
           }
           
           window.location.href = checkoutUrl;

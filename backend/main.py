@@ -744,8 +744,8 @@ async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -
             if product_id == "pdt_0NalSjZWHhamGs4oYJvTe":
                 plan = "pro"
                 credits_to_add = 50
-            # LIFETIME Plan: pdt_0NavKn2G5oln4JN2cMrzM
-            elif product_id == "pdt_0NavKn2G5oln4JN2cMrzM":
+            # LIFETIME Plan: pdt_0NavT6EYIyVG412m2MHm7
+            elif product_id == "pdt_0NavT6EYIyVG412m2MHm7":
                 plan = "lifetime"
                 credits_to_add = 99999 # Simulated Unlimited
                 
