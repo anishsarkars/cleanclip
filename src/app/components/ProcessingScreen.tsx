@@ -5,6 +5,13 @@ interface ProcessingScreenProps {
 }
 
 export default function ProcessingScreen({ fileName, progress, step }: ProcessingScreenProps) {
+  // Extract remaining frames from step string like "Removing background 10/100 (90 remaining)"
+  const remainingMatch = step?.match(/\((.*?) remaining\)/);
+  const remaining = remainingMatch ? remainingMatch[1] : null;
+  
+  // Clean step text for display
+  const displayStep = step?.split(" (")[0] || "Initializing...";
+
   return (
     <section className="flex min-h-screen items-center justify-center bg-[#fafafa] px-6 py-24">
       <div className="w-full max-w-md rounded-[32px] border border-black/6 bg-white p-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.05)] animate-fade-in">
@@ -31,12 +38,18 @@ export default function ProcessingScreen({ fileName, progress, step }: Processin
         <div className="flex items-center justify-between text-[13px]">
           <span className="flex items-center gap-2 font-medium text-zinc-600">
             <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-            {step || "Initializing..."}
+            {displayStep}
           </span>
           <span className="font-bold text-zinc-950">{progress}%</span>
         </div>
 
-        <div className="mt-10 text-[11px] font-medium leading-relaxed text-zinc-400 uppercase tracking-widest">
+        {remaining && (
+          <div className="mt-8 rounded-2xl bg-zinc-50 py-3 px-4 text-xs font-medium text-zinc-500 border border-black/[0.03]">
+             <span className="text-zinc-950 font-bold">{remaining}</span> frames remaining
+          </div>
+        )}
+
+        <div className="mt-8 text-[11px] font-medium leading-relaxed text-zinc-400 uppercase tracking-widest">
           AI is removing frames in real-time
         </div>
       </div>

@@ -388,6 +388,12 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                     pil_img = Image.fromarray(frame_rgb).convert("RGBA")
                     
                     # Remove background
+                    # Ensure rembg_session is available (lazy load if needed)
+                    global rembg_session
+                    if rembg_session is None:
+                        print("Initializing rembg session lazily...")
+                        rembg_session = new_session("isnet-general-use")
+
                     processed_pil = remove(pil_img, session=rembg_session).convert("RGBA")
                     
                     # Write to FFmpeg stdin
@@ -404,9 +410,10 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                 
                 # Update progress in memory EVERY frame for smooth "frame ticking" on UI
                 progress = 10 + int((frame_idx / (max(total_frames, frame_idx) or 1)) * 85)
+                remaining = max(0, total_frames - frame_idx) if total_frames > 0 else "?"
                 jobs[job_id].update({
                     "progress": min(progress, 95),
-                    "step": f"Removing background {frame_idx}/{total_frames or '?'}"
+                    "step": f"Removing background {frame_idx}/{total_frames or '?'} ({remaining} remaining)"
                 })
                 
                 # Persist to DB less frequently to save IO
@@ -485,21 +492,9 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
 
 @app.on_event("startup")
 async def startup() -> None:
-    global rembg_session
     init_db()
-    print("Initializing rembg session...")
-    try:
-        loop = asyncio.get_running_loop()
-        rembg_session = await loop.run_in_executor(executor, lambda: new_session("isnet-general-use"))
-        print("rembg session (isnet-general-use) initialized successfully.")
-    except Exception as e:
-        print(f"Failed to initialize isnet-general-use, falling back to u2net: {e}")
-        try:
-            rembg_session = await loop.run_in_executor(executor, lambda: new_session("u2net"))
-            print("rembg session (u2net) initialized successfully.")
-        except Exception as e2:
-            print(f"Failed to initialize any rembg session: {e2}")
-            rembg_session = None
+    print("Database initialized.")
+    # We load the session lazily on the first request to avoid blocking server start
 
 @app.get("/health")
 def health() -> dict[str, Any]:
