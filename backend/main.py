@@ -316,9 +316,6 @@ def increment_guest_usage(key: str) -> None:
         )
 
 
-    await file.close()
-    return size
-
 
 async def _save_upload(file: UploadFile, destination: Path) -> int:
     size = 0
