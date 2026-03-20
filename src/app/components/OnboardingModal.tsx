@@ -1,12 +1,12 @@
 interface OnboardingModalProps {
-  onSelect: (plan: "free" | "monthly" | "yearly") => void;
+  onSelect: (plan: "free" | "pro" | "lifetime") => void;
   loadingPlan: string | null;
 }
 
 const OPTIONS = [
-  { id: "free", name: "Free", price: "₹0", description: "10 monthly credits to get started." },
-  { id: "monthly", name: "Monthly", price: "₹199", description: "50 monthly credits for regular use." },
-  { id: "yearly", name: "Yearly", price: "₹1,499", description: "50 monthly credits with the best long-term value." },
+  { id: "free", name: "Free Forever", price: "₹0", description: "10 monthly credits to get started." },
+  { id: "pro", name: "Pro - Best Value", price: "₹149", description: "50 monthly credits for power creators." },
+  { id: "lifetime", name: "Lifetime deal", price: "₹999", description: "Unlimited credits forever. Best value." },
 ] as const;
 
 export default function OnboardingModal({ onSelect, loadingPlan }: OnboardingModalProps) {
