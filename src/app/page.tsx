@@ -317,6 +317,8 @@ export default function Home() {
     document.body.removeChild(link);
   }, [processedUrl, selectedFile]);
 
+  // For a NEW account, has_onboarded is 0. 
+  // Once they select ANY plan (even Free), it becomes 1 on the backend.
   const showOnboarding = Boolean(user && userInfo && userInfo.has_onboarded === 0);
 
   const [scrolled, setScrolled] = useState(false);

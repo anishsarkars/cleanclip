@@ -205,8 +205,8 @@ def ensure_user(clerk_user_id: str, email: str) -> dict[str, Any]:
         with db() as connection:
             connection.execute(
                 """
-                INSERT INTO users (clerk_user_id, email, plan, credits_remaining, last_reset_date, created_at, updated_at)
-                VALUES (?, ?, 'none', 0, ?, ?, ?)
+                INSERT INTO users (clerk_user_id, email, plan, credits_remaining, has_onboarded, last_reset_date, created_at, updated_at)
+                VALUES (?, ?, 'none', 0, 0, ?, ?, ?)
                 """,
                 (clerk_user_id, email, now, now, now),
             )
