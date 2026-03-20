@@ -1,9 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  --color-beige-soft: #fcfcf4;
-  --color-beige-sparkle: #fffdf2;
-  --font-heading: "Outfit", sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
@@ -18,7 +15,7 @@
   }
 
   body {
-    @apply m-0 p-0 font-sans bg-[var(--color-beige-soft)] text-gray-950 antialiased overflow-x-hidden;
+    @apply m-0 p-4 md:p-10 font-sans bg-[#F9F5EF] text-gray-950 antialiased overflow-x-hidden;
   }
 }
 
@@ -37,13 +34,14 @@
     @apply bg-white border border-gray-200 rounded-3xl p-6 transition-all duration-300 hover:border-gray-400 hover:shadow-xl hover:shadow-gray-200/50;
   }
 
-  /* Main Landing Card */
-  .landing-card {
-    @apply bg-white rounded-[48px] shadow-[0_20px_100px_rgba(0,0,0,0.04)] border border-black/[0.03];
-  }
-
-  .sparkle {
-    @apply absolute pointer-events-none;
+  /* Checkerboard background for transparent previews */
+  .checker {
+    background-image: linear-gradient(45deg, #eee 25%, transparent 25%),
+      linear-gradient(-45deg, #eee 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #eee 75%),
+      linear-gradient(-45deg, transparent 75%, #eee 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
   }
 }
 
@@ -87,6 +85,32 @@
 
 .animate-bounce-subtle {
   animation: bounceSubtle 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+.animate-float {
+  animation: float 5s ease-in-out infinite;
+}
+
+/* Premium Card Layout */
+.main-card {
+  @apply bg-white rounded-[48px] shadow-[0_32px_80px_rgba(0,0,0,0.06)] border border-white/50 backdrop-blur-3xl;
+}
+
+/* Upload soft gradient anim */
+@keyframes mesh {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-mesh {
+  background-size: 200% 200%;
+  animation: mesh 8s ease infinite;
 }
 
 /* Custom Scrollbar */

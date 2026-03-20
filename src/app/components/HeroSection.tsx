@@ -1,117 +1,86 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import React, { useRef } from "react";
 
 interface HeroSectionProps {
   onFileSelected: (file: File) => void;
   helperText?: string | null;
 }
 
-const ACCEPTED = ["video/mp4", "video/quicktime", "image/gif", "video/webm"];
-
 export default function HeroSection({ onFileSelected, helperText }: HeroSectionProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validate = (file: File) => {
-    if (!ACCEPTED.includes(file.type)) return "Use MP4, MOV, GIF, or WebM.";
-    if (file.size > 20 * 1024 * 1024) return "Maximum file size is 20MB.";
-    return null;
+  const onSelectClick = () => {
+    fileInputRef.current?.click();
   };
 
-  const handleFile = useCallback(
-    (file: File) => {
-      const nextError = validate(file);
-      setError(nextError);
-      if (!nextError) onFileSelected(file);
-    },
-    [onFileSelected],
-  );
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onFileSelected(file);
+  };
 
   return (
-    <div className="w-full max-w-[620px] mx-auto">
-      <div className="relative group">
-        {/* Decorative corner sparkles */}
-        <div className="absolute -top-4 -left-4 h-8 w-8 text-yellow-500 rotate-[-15deg] opacity-40">
-           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0L13.5 10.5L24 12L13.5 13.5L12 24L10.5 13.5L0 12L10.5 10.5L12 0Z" /></svg>
-        </div>
+    <div className="w-full flex flex-col items-center pt-8 pb-12 animate-fade-in">
+      <div className="relative mb-4">
+        <span className="text-yellow-500 absolute -top-8 -right-8 text-3xl rotate-12 animate-pulse">✨</span>
+        <h1 className="text-5xl md:text-7xl font-bold tracking-[-0.06em] text-zinc-950 text-center leading-[1.05]">
+          Remove video background <br /> <span className="text-zinc-400">in seconds</span>
+        </h1>
+      </div>
+      
+      <p className="max-w-xl text-center text-zinc-400 text-lg font-medium leading-relaxed mb-16">
+        The simplest way to remove backgrounds from videos and GIFs <br /> using our latest high-precision AI engine.
+      </p>
 
-        <div className="w-full rounded-[40px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.03)] backdrop-blur-md">
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setIsDragging(false);
-              const file = e.dataTransfer.files[0];
-              if (file) handleFile(file);
-            }}
-            className={`flex min-h-[360px] flex-col items-center justify-center rounded-[32px] border transition-all duration-300 ${
-              isDragging
-                ? "border-black/20 bg-zinc-50 scale-[0.995]"
-                : "border-zinc-100 bg-[#fffdf2]/50"
-            }`}
-          >
-            <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-[24px] bg-white shadow-sm ring-1 ring-black/[0.03]">
-               <div className="relative">
-                  <div className="absolute inset-0 bg-yellow-400/20 blur-xl rounded-full" />
-                  <svg
-                    width="28"
-                    height="28"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="text-zinc-950 relative"
-                  >
-                    <path d="M12 16V7" strokeLinecap="round" />
-                    <path d="M8.5 10.5 12 7l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Upload Card - Large Rectangular-ish with Mesh Gradient */}
+      <div className="w-full max-w-4xl relative group">
+         {/* Subtle floating label */}
+         <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-30 select-none group-hover:opacity-100 transition-opacity">
+            <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-zinc-950">Drag or click to upload</span>
+         </div>
+
+         <div 
+            onClick={onSelectClick}
+            className="cursor-pointer relative overflow-hidden rounded-[40px] border border-black/5 bg-zinc-50/50 p-20 text-center transition-all duration-500 hover:border-black/10 hover:shadow-[0_40px_100px_rgba(0,0,0,0.08)] group active:scale-[0.99]"
+         >
+            {/* Soft mesh gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 via-purple-100/30 to-rose-100/30 animate-mesh opacity-60 pointer-events-none" />
+            
+            <input 
+               type="file" 
+               className="hidden" 
+               ref={fileInputRef} 
+               onChange={handleFileChange}
+               accept="video/*,image/gif"
+            />
+
+            <div className="relative z-10 flex flex-col items-center gap-6">
+               <div className="h-20 w-20 flex items-center justify-center rounded-3xl bg-white shadow-xl transition-all group-hover:scale-110 group-hover:rotate-6">
+                  <svg className="h-8 w-8 text-zinc-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                   </svg>
+               </div>
+               
+               <div className="space-y-2">
+                  <h3 className="text-2xl font-bold tracking-tight text-zinc-950">Select Video or GIF</h3>
+                  <p className="text-[13px] font-bold uppercase tracking-[0.2em] text-zinc-400">MAX 20MB • NO BG LIMIT</p>
                </div>
             </div>
 
-            <div className="space-y-2 mb-8 px-6 text-center">
-               <h2 className="text-[28px] font-bold tracking-tight text-zinc-950">
-                  Drop your video here
-               </h2>
-               <p className="text-[14px] font-medium text-zinc-400 max-w-[280px] mx-auto leading-relaxed">
-                  Fastest background removal for MP4, MOV, GIF & WebM up to 20MB.
-               </p>
+            {helperText && (
+               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[11px] font-bold uppercase tracking-widest text-emerald-600 bg-white/50 backdrop-blur-md px-4 py-2 rounded-full border border-emerald-100">
+                  {helperText}
+               </div>
+            )}
+         </div>
+
+         {/* Playful 'NEW!' tag from reference */}
+         <div className="absolute -top-4 -left-10 -rotate-12 select-none">
+            <div className="relative bg-zinc-950 text-white text-[10px] font-bold px-4 py-2 rounded-full shadow-lg">
+               NEW v4.0AI
+               <div className="absolute -bottom-1 left-4 w-2 h-2 bg-zinc-950 rotate-45" />
             </div>
-
-            <button
-              onClick={() => inputRef.current?.click()}
-              className="cursor-pointer rounded-full bg-zinc-950 px-10 py-4 text-[13px] font-bold uppercase tracking-[0.15em] text-white shadow-xl shadow-black/10 transition-all hover:bg-black hover:shadow-black/20 active:scale-[0.98]"
-            >
-              Select Material
-            </button>
-
-            <input
-              ref={inputRef}
-              type="file"
-              accept="video/mp4,video/quicktime,image/gif,video/webm"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleFile(file);
-              }}
-              className="hidden"
-            />
-          </div>
-
-          {error ? (
-            <div className="animate-fade-in mt-4 rounded-2xl border border-red-50 bg-red-50/50 px-4 py-3 text-center text-[13px] font-bold text-red-500">
-              {error}
-            </div>
-          ) : helperText ? (
-             <div className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 text-center">
-                {helperText}
-             </div>
-          ) : null}
-        </div>
+         </div>
       </div>
     </div>
   );
