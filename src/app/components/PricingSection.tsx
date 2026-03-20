@@ -38,7 +38,7 @@ interface PricingSectionProps {
 
 export default function PricingSection({ onUpgrade }: PricingSectionProps) {
   return (
-    <section id="pricing" className="bg-[#FAFAFA] py-24 md:py-32">
+    <section id="pricing" className="bg-white py-24 md:py-32">
       <div className="section-container">
         <div className="mb-20 text-center animate-fade-in">
           <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">
@@ -86,9 +86,10 @@ export default function PricingSection({ onUpgrade }: PricingSectionProps) {
 
               <button
                 onClick={() => onUpgrade(plan.id)}
+                suppressHydrationWarning
                 className={`w-full h-14 rounded-full text-base font-bold transition-all active:scale-95 ${
                   plan.featured
-                    ? "bg-white text-zinc-950 hover:bg-zinc-100 shadow-[0_12px_40px_rgba(255,b255,255,0.1)]"
+                    ? "bg-white text-zinc-950 hover:bg-zinc-100 shadow-[0_12px_40px_rgba(255,255,255,0.1)]"
                     : "bg-zinc-950 text-white hover:bg-black"
                 }`}
               >

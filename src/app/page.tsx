@@ -325,10 +325,13 @@ export default function Home() {
           <div className="animate-fade-in flex flex-col">
             <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
             
-            <div className="relative z-10">
-               <HowItWorks />
-               <PricingSection onUpgrade={handlePlanSelection} />
-               <Footer />
+            {/* Unified White Background Container */}
+            <div className="relative z-10 bg-white">
+               <div className="space-y-0">
+                 <HowItWorks />
+                 <PricingSection onUpgrade={handlePlanSelection} />
+                 <Footer />
+               </div>
             </div>
           </div>
         )}

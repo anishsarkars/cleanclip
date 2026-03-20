@@ -10,16 +10,16 @@ export default function Navbar() {
   if (!isLoaded) return null;
 
   return (
-    <nav className="relative z-50 flex items-center justify-between px-12 pt-10 animate-fade-in text-white">
+    <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-10 py-10 animate-fade-in text-white">
       <Link href="/" className="flex items-center gap-3 no-underline">
-         <span className="font-bold tracking-tighter text-[28px]">CleanClip</span>
+         <span className="font-extrabold tracking-tighter text-[26px]">CleanClip</span>
       </Link>
       
-      <div className="hidden lg:flex gap-10 text-[14px] font-semibold opacity-70">
-         <Link href="/" className="hover:opacity-100 transition-opacity no-underline">Product</Link>
-         <Link href="/" className="hover:opacity-100 transition-opacity no-underline">Features</Link>
-         <Link href="#pricing" className="hover:opacity-100 transition-opacity no-underline">Pricing</Link>
-         <Link href="/" className="hover:opacity-100 transition-opacity no-underline">Support</Link>
+      <div className="hidden lg:flex gap-12 text-[15px] font-bold text-white/70">
+         <Link href="/" className="hover:text-white transition-colors no-underline">Product</Link>
+         <Link href="/" className="hover:text-white transition-colors no-underline">Features</Link>
+         <Link href="#pricing" className="hover:text-white transition-colors no-underline">Pricing</Link>
+         <Link href="/" className="hover:text-white transition-colors no-underline">Support</Link>
       </div>
 
       <div className="flex items-center gap-4">
@@ -28,7 +28,8 @@ export default function Navbar() {
          ) : (
            <button 
              onClick={() => openSignIn()}
-             className="h-10 px-6 rounded-full bg-white text-zinc-800 text-sm font-bold shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
+             suppressHydrationWarning
+             className="h-10 px-8 rounded-full bg-white text-zinc-950 text-sm font-bold shadow-sm hover:scale-105 active:scale-95 transition-all cursor-pointer"
            >
               Login
            </button>
