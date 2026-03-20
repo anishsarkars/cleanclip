@@ -27,7 +27,7 @@ export default function Navbar() {
         </div>
         <div className="flex items-center gap-2 pl-4 border-l border-zinc-950/10 ml-4">
            {user ? (
-             <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: "h-10 w-10" } }} />
+             <UserButton />
            ) : (
              <button 
                onClick={() => openSignIn()}
