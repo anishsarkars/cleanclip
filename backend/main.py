@@ -246,13 +246,12 @@ def set_user_plan(clerk_user_id: str, email: str, plan: str) -> dict[str, Any]:
     now = now_iso()
     user = get_user(clerk_user_id)
     
-    # We only grant 'free' credits during onboarding (if they had 'none' before)
-    # Paid plans (monthly/yearly) credits are granted strictly via Webhook
+    # Ensure paid plans are NOT granted via this endpoint (only Free onboarding)
+    final_plan = "free" if plan == "free" else (user["plan"] if user else "none")
     credits_to_set = 0
-    if plan == "free" and (not user or user["plan"] == "none"):
+    if final_plan == "free" and (not user or user["plan"] == "none"):
         credits_to_set = PLAN_LIMITS["free"]
     elif user:
-        # Keep existing credits if just switching to a payment flow
         credits_to_set = user["credits_remaining"]
 
     with db() as connection:
@@ -266,7 +265,7 @@ def set_user_plan(clerk_user_id: str, email: str, plan: str) -> dict[str, Any]:
                 credits_remaining = excluded.credits_remaining,
                 updated_at = excluded.updated_at
             """,
-            (clerk_user_id, email, plan, credits_to_set, now, now, now),
+            (clerk_user_id, email, final_plan, credits_to_set, now, now, now),
         )
     updated = get_user(clerk_user_id)
     if not updated:
