@@ -22,6 +22,34 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
+        <head>
+          {/* Silence MetaMask/Extension errors that appear in Next.js 16 dev overlay */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  const originalError = console.error;
+                  console.error = function() {
+                    const msg = arguments[0];
+                    if (typeof msg === 'string' && (
+                        msg.includes('MetaMask') || 
+                        msg.includes('Failed to connect to MetaMask') ||
+                        msg.includes('nkbihfbeogaeaoehlefnkodbefgpgknn')
+                    )) {
+                      return;
+                    }
+                    originalError.apply(console, arguments);
+                  };
+                  window.addEventListener('error', (event) => {
+                    if (event.filename && event.filename.includes('nkbihfbeogaeaoehlefnkodbefgpgknn')) {
+                      event.stopImmediatePropagation();
+                    }
+                  }, true);
+                })();
+              `
+            }}
+          />
+        </head>
         <body className="antialiased" suppressHydrationWarning>
           {children}
         </body>

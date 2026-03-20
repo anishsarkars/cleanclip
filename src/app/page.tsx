@@ -29,6 +29,10 @@ export default function Home() {
   const { user, isLoaded } = useUser();
   const { openSignUp } = useClerk();
 
+  useEffect(() => {
+    console.log("CleanClip Initialized. API URL:", API);
+  }, []);
+
   const [appState, setAppState] = useState<AppState>("idle");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [originalUrl, setOriginalUrl] = useState("");
@@ -66,9 +70,15 @@ export default function Home() {
 
   useEffect(() => {
     if (!isLoaded) return;
-    if (user) {
-       syncUser().catch(console.error);
+    if (!user) {
+      setUserInfo(null);
+      return;
     }
+
+    syncUser().catch((error) => {
+      console.error(error);
+      setHelperText("We could not load your account yet.");
+    });
   }, [isLoaded, syncUser, user]);
 
   const creditLabel = useMemo(() => {
@@ -102,6 +112,7 @@ export default function Home() {
       stopPolling();
       pollRef.current = setInterval(async () => {
         try {
+          // Use a cache-buster timestamp for reliable updates
           const response = await fetch(`${API}/status/${jobId}?t=${Date.now()}`);
           const data = await response.json();
           if (!response.ok) throw new Error(data.detail || "Unable to fetch status.");
@@ -109,7 +120,10 @@ export default function Home() {
           if (data.created_at) setJobStartTime(data.created_at);
           const newProgress = data.progress ?? 0;
           setProgress((prev) => {
+            // If backend progress is actually ahead, jump to it
             if (newProgress > prev) return newProgress;
+            // Otherwise, drift slowly forward (0.1% every 250ms) to show "life"
+            // Cap drift at 95% so it never finishes without the backend
             if (prev < 95) return prev + 0.1;
             return prev;
           });
@@ -122,6 +136,7 @@ export default function Home() {
             setProgress(100);
             setStep("Ready!");
             
+            // Short delay so user can see it reach 100%
             setTimeout(async () => {
               if (data.result_url) setProcessedUrl(`${API}${data.result_url}`);
               if (user) await syncUser();
@@ -138,13 +153,14 @@ export default function Home() {
           setErrorMsg(error instanceof Error ? error.message : "Processing failed.");
           setAppState("error");
         }
-      }, 250);
+      }, 250); // Increased frequency for ultra-smooth "frame" ticking (0.25s)
     },
     [stopPolling, syncUser, user],
   );
 
   const handleFileSelected = useCallback(
     async (file: File) => {
+      // If user is logged in but has no plan, wait for onboarding
       if (user && userInfo?.plan === "none") {
         setHelperText("Please select a plan to continue.");
         return;
@@ -154,68 +170,87 @@ export default function Home() {
       setSelectedFile(file);
       setOriginalUrl(URL.createObjectURL(file));
       setAppState("processing");
-      setStep("Initializing upload...");
+      setStep("Starting upload...");
       setProgress(0);
 
       try {
-        const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const CHUNK_SIZE = 2 * 1024 * 1024; 
-        const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+        const formData = new FormData();
+        formData.append("file", file);
+        if (user) formData.append("clerk_user_id", user.id);
 
-        for (let i = 0; i < totalChunks; i++) {
-          const start = i * CHUNK_SIZE;
-          const end = Math.min(file.size, start + CHUNK_SIZE);
-          const chunk = file.slice(start, end);
+        // We use XMLHttpRequest for real upload progress tracking
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${API}/process-video`, true);
 
-          const formData = new FormData();
-          formData.append("file", chunk);
-          formData.append("job_id", jobId);
-          formData.append("chunk_index", i.toString());
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            // Map 0-100% upload to 0-30% on the progress bar
+            const percent = Math.round((event.loaded / event.total) * 30);
+            setProgress(percent);
+            const uploadPercent = Math.round((event.loaded / event.total) * 100);
+            if (uploadPercent < 100) {
+              setStep(`Uploading (${uploadPercent}%)`);
+            } else {
+              setStep("Finalizing upload...");
+            }
+          }
+        };
 
-          setStep(`Uploading (${Math.round((i / totalChunks) * 100)}%)`);
-          
-          const response = await fetch(`${API}/upload-chunk`, {
-            method: "POST",
-            body: formData,
-          });
+        xhr.onload = async () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const data = JSON.parse(xhr.responseText);
+            setStep("Ready to process...");
+            setProgress(30);
+            pollStatus(data.job_id);
+          } else {
+            let errorDetail = "Upload failed.";
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              errorDetail = errorData.detail || errorDetail;
+              
+              if (errorDetail === "ONBOARDING_REQUIRED") {
+                await syncUser();
+                setAppState("idle");
+                return;
+              }
+              if (errorDetail === "CREDITS_EXHAUSTED") {
+                setShowPaywall(true);
+                setAppState("idle");
+                return;
+              }
+              if (errorDetail === "GUEST_LIMIT_REACHED") {
+                openSignUp();
+                setAppState("idle");
+                return;
+              }
+            } catch { /* ignore parse error */ }
+            
+            setErrorMsg(errorDetail);
+            setAppState("error");
+          }
+        };
 
-          if (!response.ok) throw new Error("Chunk upload failed.");
-          setProgress(Math.round(((i + 1) / totalChunks) * 30));
-        }
+        xhr.onerror = () => {
+          setErrorMsg("Network error during upload.");
+          setAppState("error");
+        };
 
-        setStep("Finalizing stream...");
-        const finalizeData = new FormData();
-        finalizeData.append("job_id", jobId);
-        finalizeData.append("filename", file.name);
-        finalizeData.append("total_chunks", totalChunks.toString());
-        if (user) finalizeData.append("clerk_user_id", user.id);
-        
-        const finalizeRes = await fetch(`${API}/finalize-upload`, {
-          method: "POST",
-          body: finalizeData,
-        });
-
-        if (!finalizeRes.ok) {
-           const err = await finalizeRes.json();
-           if (err.detail === "CREDITS_EXHAUSTED") { setShowPaywall(true); setAppState("idle"); return; }
-           throw new Error(err.detail || "Finalization failed.");
-        }
-
-        setStep("Ready to process...");
-        setProgress(30);
-        pollStatus(jobId);
-
+        xhr.send(formData);
       } catch (error) {
         setErrorMsg(error instanceof Error ? error.message : "Initialization failed.");
         setAppState("error");
       }
     },
-    [pollStatus, user, userInfo?.plan],
+    [openSignUp, pollStatus, syncUser, user, userInfo?.plan],
   );
 
   const handlePlanSelection = useCallback(
     async (plan: Plan) => {
-      if (!user) { openSignUp(); return; }
+      if (!user) {
+        openSignUp();
+        return;
+      }
+
       setLoadingPlan(plan);
       try {
         const response = await fetch(`${API}/users/select-plan`, {
@@ -233,7 +268,14 @@ export default function Home() {
         setShowPaywall(false);
 
         if (plan === "monthly" || plan === "yearly") {
-          const productId = plan === "monthly" ? "pdt_0NalSjZWHhamGs4oYJvTe" : "pdt_0NalSUMsJzvscQl8QNvVM";
+          const productId = 
+            plan === "monthly" 
+              ? "pdt_0NalSjZWHhamGs4oYJvTe" 
+              : "pdt_0NalSUMsJzvscQl8QNvVM";
+          
+          // Using a cleaner checkout URL without quantity=99
+          // We also append the clerk_user_id as a metadata parameter if supported by Dodo,
+          // but for now, we just fix the broken quantity and ensure it's a valid checkout.
           const returnUrl = encodeURIComponent(`${window.location.origin}`);
           const checkoutUrl = `https://checkout.dodopayments.com/buy/${productId}?client_reference_id=${user.id}&return_url=${returnUrl}`;
           window.location.href = checkoutUrl;
@@ -250,76 +292,78 @@ export default function Home() {
   const handleDownload = useCallback(() => {
     const link = document.createElement("a");
     link.href = processedUrl;
-    link.download = selectedFile?.name ? selectedFile.name.replace(/\.[^.]+$/, "_cleanclip.webm") : "cleanclip-result.webm";
-    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    link.download = selectedFile?.name
+      ? selectedFile.name.replace(/\.[^.]+$/, "_cleanclip.webm")
+      : "cleanclip-result.webm";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }, [processedUrl, selectedFile]);
 
   const showOnboarding = Boolean(user && userInfo?.plan === "none");
 
   return (
-    <main className="min-h-screen relative overflow-hidden">
-      
-      {/* Background Orbital Rings (Dashboard Style) */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="bg-ring-line h-[500px] w-[500px] top-1/2 left-1/2" />
-          <div className="bg-ring-line h-[800px] w-[800px] top-1/2 left-1/2" />
-          <div className="bg-ring-line h-[1200px] w-[1200px] top-1/2 left-1/2" />
-          <div className="bg-ring-line h-[1600px] w-[1600px] top-1/2 left-1/2" />
-          
-          <div className="absolute top-0 right-[-10%] h-[600px] w-[600px] bg-blue-500 opacity-20 blur-[180px] rounded-full" />
-          <div className="absolute bottom-[-10%] left-[-10%] h-[600px] w-[600px] bg-indigo-600 opacity-10 blur-[180px] rounded-full" />
-      </div>
-
-      <div className="relative z-50 pt-8 px-6">
-        <Navbar />
-      </div>
-
-      <div className="relative z-10 pt-10 pb-20">
-        {appState === "idle" && (
-          <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
-        )}
-
-        {appState === "processing" && (
-           <ProcessingScreen fileName={selectedFile?.name || "file"} progress={progress} step={step} />
-        )}
-
-        {appState === "result" && (
-           <ResultSection 
-             originalUrl={originalUrl} 
-             processedUrl={processedUrl} 
-             fileName={selectedFile?.name || "clip.mp4"} 
-             onReset={handleReset}
-             onDownload={handleDownload}
-           />
-        )}
-
-        {appState === "error" && (
-          <div className="flex flex-col items-center py-40">
-             <div className="glass-panel p-16 rounded-[48px] text-center max-w-lg">
-                <h2 className="text-4xl font-bold mb-4">Something went wrong</h2>
-                <p className="text-white/60 mb-10 leading-relaxed">{errorMsg}</p>
-                <button onClick={handleReset} className="px-10 py-4 bg-white text-blue-600 rounded-full font-bold hover:scale-105 transition-all">
-                   Try again
-                </button>
-             </div>
-          </div>
-        )}
-      </div>
-
-      <div className="relative z-10 bg-white text-zinc-950 pt-32 pb-40 px-6">
-        <div className="max-w-6xl mx-auto space-y-40">
-           <HowItWorks />
-           <PricingSection onUpgrade={handlePlanSelection} />
-           <Footer />
-        </div>
-      </div>
-
-      {showPaywall && (
-        <PaywallModal onChoosePlan={handlePlanSelection} onClose={() => setShowPaywall(false)} loadingPlan={loadingPlan} />
-      )}
+    <main className="min-h-screen bg-[#FDFBF7] selection:bg-blue-100/50">
+      <Navbar />
 
       {showOnboarding && (
         <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
+      )}
+
+      {showPaywall && (
+        <PaywallModal
+          onChoosePlan={handlePlanSelection}
+          onClose={() => setShowPaywall(false)}
+          loadingPlan={loadingPlan}
+        />
+      )}
+
+      {appState === "idle" && (
+        <>
+          <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
+          <HowItWorks />
+          <PricingSection onUpgrade={handlePlanSelection} />
+          <Footer />
+        </>
+      )}
+
+      {appState === "processing" && selectedFile && (
+        <ProcessingScreen 
+          fileName={selectedFile.name} 
+          progress={progress} 
+          step={step} 
+          previewUrl={previewUrl} 
+          startTime={jobStartTime}
+        />
+      )}
+
+      {appState === "result" && selectedFile && processedUrl && (
+        <>
+          <ResultSection
+            originalUrl={originalUrl}
+            processedUrl={processedUrl}
+            fileName={selectedFile.name}
+            onReset={handleReset}
+            onDownload={handleDownload}
+          />
+          <Footer />
+        </>
+      )}
+
+      {appState === "error" && (
+        <section className="flex min-h-screen items-center justify-center bg-[#fafafa] px-6 py-24">
+          <div className="w-full max-w-md rounded-[32px] border border-black/6 bg-white p-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.05)]">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Error</p>
+            <h2 className="mb-4 text-3xl font-semibold tracking-[-0.04em] text-zinc-950">Something went wrong</h2>
+            <p className="mb-8 text-sm leading-7 text-zinc-500">{errorMsg}</p>
+            <button
+              onClick={handleReset}
+              className="cursor-pointer rounded-full bg-zinc-950 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-black"
+            >
+              Try again
+            </button>
+          </div>
+        </section>
       )}
     </main>
   );

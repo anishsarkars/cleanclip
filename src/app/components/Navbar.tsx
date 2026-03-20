@@ -1,54 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import NavbarAuthClerk from "./NavbarAuthClerk";
+import { UserButton, useClerk, useUser } from "@clerk/nextjs";
+import { Camera, Clapperboard } from "lucide-react";
 
 export default function Navbar() {
+  const { user, isLoaded } = useUser();
+  const { openSignIn } = useClerk();
+
+  if (!isLoaded) return null;
+
   return (
-    <div className="w-full flex justify-center sticky top-10 shrink-0">
-      <nav className="glass-pill h-20 px-8 flex items-center justify-between w-full max-w-4xl transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
-        
-        {/* Left: Logo (CC Shutter style) */}
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="h-10 w-16 rounded-[12px] bg-white flex items-center justify-center shadow-lg transition-all group-hover:scale-110">
-             <div className="flex items-center gap-1">
-                <span className="text-zinc-950 font-black text-xl tracking-tighter">CC</span>
-                <div className="h-4 w-4 rounded-full border-2 border-zinc-950 flex items-center justify-center">
-                   <div className="h-1 w-1 bg-zinc-950 rounded-full" />
-                </div>
-             </div>
-          </div>
+    <nav className="fixed inset-x-0 top-8 z-50 flex justify-center animate-fade-in pointer-events-none">
+      <div className="h-14 glass-premium rounded-full flex items-center px-4 gap-2 border border-white/60 shadow-2xl pointer-events-auto">
+        <Link href="/" className="flex items-center gap-1.5 px-3 border-r border-zinc-950/5 no-underline">
+           <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center">
+              <Clapperboard className="w-4 h-4 text-white" />
+           </div>
+           <span className="font-bold tracking-tighter text-zinc-900 text-lg">CC</span>
         </Link>
-
-        {/* Center: Links (White on Blue) */}
-        <div className="hidden md:flex items-center gap-10">
-           <Link href="/" className="text-[14px] font-medium text-white/60 hover:text-white transition-colors">Home</Link>
-           <button 
-              onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-              className="text-[14px] font-medium text-white/60 hover:text-white transition-colors cursor-pointer"
-           >
-              Solutions
-           </button>
-           <button 
-              onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-              className="text-[14px] font-bold text-zinc-500 hover:text-zinc-950 transition-colors cursor-pointer"
-           >
-              Pricing
-           </button>
-           <Link href="/" className="text-[14px] font-bold text-zinc-500 hover:text-zinc-950 transition-colors">Contacts</Link>
+        <div className="hidden md:flex gap-8 px-8 text-sm font-semibold text-zinc-500">
+           <Link href="/" className="hover:text-zinc-900 transition-colors no-underline">Home</Link>
+           <a href="#" className="hover:text-zinc-900 transition-colors no-underline">Solutions</a>
+           <a href="#pricing" className="hover:text-zinc-900 transition-colors no-underline">Pricing</a>
+           <a href="#" className="hover:text-zinc-900 transition-colors no-underline">Contacts</a>
         </div>
-
-        {/* Right: Auth + CTA */}
-        <div className="flex items-center gap-6">
-           <NavbarAuthClerk />
-           <button 
-              onClick={() => document.getElementById('upload')?.scrollIntoView({ behavior: 'smooth' })}
-              className="hidden lg:block h-12 px-8 bg-zinc-950 text-white text-[14px] font-bold rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_10px_20px_rgba(0,0,0,0.2)]"
-           >
-             Start Today
-           </button>
+        <div className="flex items-center gap-2 pl-2 border-l border-zinc-950/5">
+           {user ? (
+             <UserButton />
+           ) : (
+             <button 
+               onClick={() => openSignIn()}
+               className="h-10 px-6 rounded-full bg-zinc-950 text-white text-sm font-bold shadow-[0_4px_12px_rgba(0,0,0,0.2)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
+             >
+                Start Today
+             </button>
+           )}
         </div>
-      </nav>
-    </div>
+      </div>
+    </nav>
   );
 }
