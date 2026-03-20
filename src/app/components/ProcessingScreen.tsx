@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Logo from "./Logo";
+import { ArrowRight } from "lucide-react";
 
 interface ProcessingScreenProps {
   fileName: string;
@@ -85,76 +86,88 @@ export default function ProcessingScreen({ fileName, progress, step, startTime, 
          >
             <source src="/processing-bg.mp4" type="video/mp4" />
          </video>
-         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
-         <div className="absolute inset-0 backdrop-blur-[4px]" />
+         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black" />
+         <div className="absolute inset-0 backdrop-blur-[6px]" />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-between h-screen py-24 px-6 w-full max-w-5xl">
-         
-         {/* Top: Simple Logo Only (Clean UI) */}
-         <div className="animate-fade-in">
-            <Logo className="h-16 w-16 opacity-80" />
-         </div>
+      <div className="relative z-10 flex min-h-screen w-full flex-col items-center justify-between py-24 px-6 md:py-32">
+        
+        {/* 🏷️ Minimal Branding (Spacious) */}
+        <div className="animate-fade-in opacity-80 hover:opacity-100 transition-opacity">
+          <Logo className="h-14 w-14" color="#FFFFFF" />
+        </div>
 
-         {/* Center: Immersive Radial Neural Hub */}
-         <div className="flex flex-col items-center">
-            <div className="relative mb-8 flex items-center justify-center h-72 w-72 md:h-96 md:w-96">
-                {/* Immersive neural glow */}
-                <div 
-                   className="absolute inset-0 rounded-full border-[1px] border-white/5 shadow-[0_0_100px_rgba(255,255,255,0.05)] scale-110" 
-                />
-                
-                <svg className="h-full w-full -rotate-90 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">
-                   <circle 
-                      cx="50%" cy="50%" r="46%" 
-                      stroke="rgba(255,255,255,0.03)" 
-                      strokeWidth="1" 
-                      fill="none" 
-                   />
-                   <circle 
-                      cx="50%" cy="50%" r="46%" 
-                      stroke="white" 
-                      strokeWidth="4" 
-                      fill="none"
-                      strokeDasharray="100 100"
-                      strokeDashoffset={100 - driftProgress}
-                      className="transition-all duration-300 ease-linear"
-                      pathLength="100"
-                      strokeLinecap="round"
-                   />
-                </svg>
+        {/* 🌀 High-Quality 'Doodle' Neural Progress Hub */}
+        <div className="relative flex flex-col items-center justify-center">
+          <div className="relative h-64 w-64 md:h-80 md:w-80 flex items-center justify-center">
+            
+            {/* Animated 'Doodle' Pulse Rings (Spacious Feel) */}
+            <div className="absolute inset-[-40px] rounded-full border border-white/5 animate-[ping_4s_linear_infinite]" />
+            <div className="absolute inset-[-100px] rounded-full border border-white/[0.02] animate-[ping_6s_linear_infinite] delay-1000" />
+            
+            <svg className="h-full w-full rotate-[-90deg] drop-shadow-[0_0_40px_rgba(255,255,255,0.15)]">
+              <circle
+                cx="50%"
+                cy="50%"
+                r="46%"
+                fill="none"
+                stroke="rgba(255,255,255,0.02)"
+                strokeWidth="1"
+              />
+              <circle
+                cx="50%"
+                cy="50%"
+                r="46%"
+                fill="none"
+                stroke="white"
+                strokeWidth="4"
+                strokeDasharray="289%"
+                strokeDashoffset={`${289 * (1 - driftProgress / 100)}%`}
+                strokeLinecap="round"
+                className="transition-all duration-500 ease-out"
+              />
+            </svg>
 
-                <div className="absolute flex flex-col items-center gap-0">
-                   <span className="text-[80px] md:text-[110px] font-black tracking-[-0.08em] text-white leading-none tabular-nums">
-                      {Math.floor(driftProgress)}<span className="text-2xl font-bold opacity-30 ml-1">%</span>
-                   </span>
-                   <span className="text-[12px] font-bold tracking-[0.5em] uppercase text-white/30 transform translate-y-2">{timeLeft}</span>
-                </div>
+            {/* Neural Percentage (Subtle Doodle Vib) */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+              <span className="text-6xl md:text-8xl font-light tracking-tighter tabular-nums animate-pulse-subtle">
+                {Math.floor(driftProgress)}
+                <span className="text-2xl md:text-3xl opacity-30 font-thin ml-1">%</span>
+              </span>
+              <span className="mt-4 text-[10px] uppercase tracking-[0.5em] font-black text-white/30 animate-pulse">
+                Removing...
+              </span>
             </div>
+          </div>
+          
+          <div className="mt-20 text-center space-y-3">
+            <p className="text-xs font-medium text-white/40 tracking-[0.2em] uppercase">
+              {displayStep || "Initializing Neural Matrix"}
+            </p>
+            {progress > 5 && (
+              <p className="text-[10px] font-bold text-white/10 uppercase tracking-[0.3em] delay-500 animate-fade-in">
+                {timeLeft}
+              </p>
+            )}
+          </div>
+        </div>
 
-            <div className="flex flex-col items-center gap-4 animate-fade-in">
-               <div className="flex items-center gap-3 px-6 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-3xl">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/70">{displayStep}</span>
-               </div>
-               <p className="text-[13px] font-medium text-white/20 tracking-tight">Processing: {fileName}</p>
-            </div>
-         </div>
-
-         {/* Bottom: Subtle Subscription Upgrade */}
-         <div className="flex flex-col items-center gap-8 animate-fade-in delay-500">
-            <button 
-              onClick={onUpgrade}
-              className="group flex items-center gap-3 py-3 px-8 rounded-full border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-500 active:scale-95"
-            >
-               <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/40 group-hover:text-white/80 transition-colors">Upgrade to Pro</span>
-               <div className="flex items-center justify-center h-5 w-5 rounded-full bg-white/10 group-hover:bg-white/20 transition-all">
-                  <span className="text-white text-[10px] font-bold">↑</span>
-               </div>
-               <span className="text-[10px] font-medium text-white/20 pl-2">Get 10x faster performance</span>
-            </button>
-            <span className="text-[8px] font-black uppercase tracking-[0.6em] text-white/10">Neural Engine 4.0 Pro</span>
-         </div>
+        {/* 💎 Pro-Speed Upgrade Module (Low Profile) */}
+        <div className="w-full max-w-[420px] animate-fade-in delay-1000">
+           <button 
+             onClick={onUpgrade}
+             className="group w-full flex items-center justify-between p-6 rounded-[32px] bg-white/[0.03] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-700 backdrop-blur-3xl"
+           >
+             <div className="flex flex-col text-left">
+               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Pro Performance</span>
+               <span className="text-[14px] font-medium text-white/80 group-hover:text-white transition-colors">Want it 10x faster?</span>
+             </div>
+             <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-2xl group-hover:bg-blue-600 transition-all shadow-[0_0_20px_rgba(37,99,235,0)] group-hover:shadow-[0_0_20px_rgba(37,99,235,0.3)]">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white">Upgrade</span>
+                <ArrowRight className="w-3 h-3 text-white group-hover:translate-x-1 transition-transform" />
+             </div>
+           </button>
+        </div>
       </div>
 
       <style jsx>{`
@@ -162,7 +175,12 @@ export default function ProcessingScreen({ fileName, progress, step, startTime, 
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        .animate-fade-in { animation: fade-in 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes pulse-subtle {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.03); opacity: 0.85; }
+        }
+        .animate-fade-in { animation: fade-in 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-pulse-subtle { animation: pulse-subtle 4s ease-in-out infinite; }
       `}</style>
     </section>
   );

@@ -311,9 +311,9 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC]">
-      <div className={`transition-all duration-700 ${scrolled ? "p-4 md:p-6" : "p-0"}`}>
-        <div className={`relative overflow-hidden transition-all duration-1000 bg-black ${scrolled ? "rounded-[48px] md:rounded-[64px] shadow-2xl" : "rounded-none"}`}>
+    <main className="min-h-screen bg-[#F8FAFC] font-sans">
+      <div className="p-0">
+        <div className="relative overflow-hidden bg-black rounded-none">
           
           {/* Immersive Cleanup: Hide Nav during critical processing to focus on the 'Clean UI' */}
           {appState !== "processing" && <Navbar />}
