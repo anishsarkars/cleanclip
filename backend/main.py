@@ -717,21 +717,44 @@ def get_result(job_id: str) -> FileResponse:
 
 @app.post("/webhook/dodopayments")
 @app.post("/payments/webhook")
-async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -> JSONResponse:
+async def dodo_webhook(request: Request) -> JSONResponse:
     body = await request.body()
+    body_str = body.decode("utf-8")
     secret = os.getenv("DODO_SECRET_KEY", "")
     
-    print(f"DEBUG: Webhook hit! Sig: {x_dodo_signature}")
+    # Extract Svix / Dodo Headers
+    svix_id = request.headers.get("svix-id") or request.headers.get("webhook-id")
+    svix_timestamp = request.headers.get("svix-timestamp") or request.headers.get("webhook-timestamp")
+    svix_signature = request.headers.get("svix-signature") or request.headers.get("x-dodo-signature")
     
-    # Signature Validation (Only if secret is provided)
-    if secret and x_dodo_signature:
-        expected_sig = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(expected_sig, x_dodo_signature):
-            print("🚨 WEBHOOK ERROR: Signature Mismatch")
-            return JSONResponse({"status": "error", "message": "Invalid signature"}, status_code=401)
+    print(f"DEBUG: Webhook hit! ID: {svix_id}, TS: {svix_timestamp}")
+    
+    # Signature Validation (Svix-compliant)
+    if secret and svix_signature:
+        try:
+            # v1,signature format
+            to_sign = f"{svix_id}.{svix_timestamp}.{body_str}"
+            expected_sig = hmac.new(secret.encode(), to_sign.encode(), hashlib.sha256).hexdigest()
+            
+            # Check if any part of the signature header matches
+            actual_sigs = svix_signature.split(" ")
+            found = False
+            for sig in actual_sigs:
+                if "," in sig:
+                    _, sig_hash = sig.split(",", 1)
+                    if hmac.compare_digest(expected_sig, sig_hash):
+                        found = True
+                        break
+            
+            if not found:
+                print("🚨 WEBHOOK ERROR: Svix Signature Mismatch")
+                return JSONResponse({"status": "error", "message": "Invalid signature"}, status_code=401)
+        except Exception as e:
+            print(f"🚨 WEBHOOK ERROR: Validation failed: {e}")
+            return JSONResponse({"status": "error", "message": "Validation error"}, status_code=401)
             
     try:
-        data = json.loads(body)
+        data = json.loads(body_str)
         print(f"DEBUG: Webhook Body: {json.dumps(data, indent=2)}")
         event_type = data.get("type")
         payload = data.get("data", {})
