@@ -716,27 +716,30 @@ def get_result(job_id: str) -> FileResponse:
 
 
 @app.post("/webhook/dodopayments")
+@app.post("/payments/webhook")
 async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -> JSONResponse:
     body = await request.body()
     secret = os.getenv("DODO_SECRET_KEY", "")
     
-    # Signature Validation
+    print(f"DEBUG: Webhook hit! Sig: {x_dodo_signature}")
+    
+    # Signature Validation (Only if secret is provided)
     if secret and x_dodo_signature:
         expected_sig = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected_sig, x_dodo_signature):
+            print("🚨 WEBHOOK ERROR: Signature Mismatch")
             return JSONResponse({"status": "error", "message": "Invalid signature"}, status_code=401)
             
     try:
         data = json.loads(body)
+        print(f"DEBUG: Webhook Body: {json.dumps(data, indent=2)}")
         event_type = data.get("type")
         payload = data.get("data", {})
         
-        # DodoPayments passes client_reference_id which we mapped to Clerk User ID
-        # Check direct payload or nested metadata just in case
+        # Check direct payload or nested metadata
         clerk_user_id = payload.get("client_reference_id") or payload.get("metadata", {}).get("client_reference_id")
         
         if event_type == "payment.succeeded" and clerk_user_id:
-            # Map Product IDs to 'Pro' and 'Lifetime' tiers
             product_id = payload.get("product_id")
             plan = "none"
             credits_to_add = 0
@@ -748,13 +751,12 @@ async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -
             # LIFETIME Plan: pdt_0NavKn2G5oln4JN2cMrzM
             elif product_id == "pdt_0NavKn2G5oln4JN2cMrzM":
                 plan = "lifetime"
-                credits_to_add = 99999 # Simulated Unlimited
+                credits_to_add = 99999
                 
             if plan != "none":
                 email = payload.get("customer_email", "paid@user.com")
                 now = now_iso()
                 
-                # Upsert User/Grant Credits Securely
                 with db() as connection:
                     connection.execute(
                         """
@@ -771,5 +773,5 @@ async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -
                 
         return JSONResponse({"status": "ok"})
     except Exception as e:
-        print(f"Webhook error: {e}")
+        print(f"🚨 WEBHOOK ERROR: {e}")
         return JSONResponse({"status": "error", "message": str(e)}, status_code=400)
