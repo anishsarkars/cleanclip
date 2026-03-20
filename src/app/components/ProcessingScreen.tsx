@@ -36,10 +36,10 @@ export default function ProcessingScreen({ fileName, progress, step }: Processin
           </div>
           
           <div className="space-y-4 mb-14">
-             <h2 className="text-4xl md:text-5xl font-black tracking-[-0.06em] text-white shadow-text leading-tight">
+             <h2 className="text-3xl md:text-4xl font-bold tracking-[-0.04em] text-white shadow-text leading-tight">
                 Removing Background...
              </h2>
-             <p className="mx-auto max-w-[280px] truncate text-[16px] font-bold text-white/40 shadow-subtext">
+             <p className="mx-auto max-w-[280px] truncate text-[15px] font-medium text-white/40 shadow-subtext">
                 File: <span className="text-white/60">{fileName}</span>
              </p>
           </div>

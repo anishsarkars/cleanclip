@@ -15,7 +15,7 @@ export default function Navbar() {
          <div className="h-8 w-8 rounded-xl bg-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500">
             <div className="h-4 w-4 bg-black rounded-sm" />
          </div>
-         <span className="font-black tracking-tighter text-[22px] md:text-[24px]">CleanClip</span>
+         <span className="font-bold tracking-tighter text-[22px] md:text-[24px]">CleanClip</span>
       </Link>
       
       <div className="hidden lg:flex gap-10 text-[14px] font-black uppercase tracking-[0.2em] text-white/40">
