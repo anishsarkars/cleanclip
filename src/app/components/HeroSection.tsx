@@ -31,7 +31,7 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
   );
 
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-60 pt-60 md:pt-72">
+    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-60 pt-40 md:pt-60">
       {/* 🌌 Cinematic OLED Pure Black to Blue Gradient */}
       <div className="absolute inset-0 bg-[#000000] -z-30" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#000000]/80 via-[#1E293B]/40 to-[#2563EB]/40 -z-20" />
@@ -72,7 +72,7 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
       {/* 🌫️ Constant High-Quality Overflow Transition to White */}
       <div className="absolute inset-x-0 bottom-0 h-[450px] bg-gradient-to-t from-white via-white/100 to-transparent pointer-events-none z-10" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center translate-y-[-110px]">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center translate-y-[-60px] md:translate-y-[-110px]">
 
         <h1
           className="mb-8 text-white text-1xl md:text-8xl lg:text-7xl font-medium tracking-[-0.03em] leading-tight animate-fade-in shadow-text"

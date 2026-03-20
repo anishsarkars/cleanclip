@@ -15,7 +15,7 @@ import ResultSection from "./components/ResultSection";
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 type AppState = "idle" | "processing" | "result" | "error";
-type Plan = "free" | "monthly" | "yearly";
+type Plan = "free" | "pro" | "lifetime";
 
 interface UserInfo {
   clerk_user_id: string;
@@ -267,17 +267,20 @@ export default function Home() {
         setUserInfo(data);
         setShowPaywall(false);
 
-        if (plan === "monthly" || plan === "yearly") {
+        if (plan === "pro" || plan === "lifetime") {
           const productId = 
-            plan === "monthly" 
+            plan === "pro" 
               ? "pdt_0NalSjZWHhamGs4oYJvTe" 
-              : "pdt_0NalSUMsJzvscQl8QNvVM";
+              : "pdt_0NavKn2G5oln4JN2cMrzM";
           
-          // Using a cleaner checkout URL without quantity=99
-          // We also append the clerk_user_id as a metadata parameter if supported by Dodo,
-          // but for now, we just fix the broken quantity and ensure it's a valid checkout.
           const returnUrl = encodeURIComponent(`${window.location.origin}`);
-          const checkoutUrl = `https://checkout.dodopayments.com/buy/${productId}?client_reference_id=${user.id}&return_url=${returnUrl}`;
+          let checkoutUrl = `https://checkout.dodopayments.com/buy/${productId}?client_reference_id=${user.id}&return_url=${returnUrl}`;
+          
+          // Apply the specific Special quantity parameter if it's the Lifetime deal
+          if (plan === "lifetime") {
+            checkoutUrl += "&quantity=99";
+          }
+          
           window.location.href = checkoutUrl;
         }
       } catch (error) {

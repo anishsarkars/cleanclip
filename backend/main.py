@@ -33,7 +33,7 @@ OUTPUTS_DIR = BASE_DIR / "outputs"
 DB_PATH = BASE_DIR / "cleanclip.db"
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20MB - Safer for free-tier environments
 ALLOWED_SUFFIXES = {".mp4", ".mov", ".webm", ".gif"}
-PLAN_LIMITS = {"none": 0, "free": 10, "monthly": 50, "yearly": 50}
+PLAN_LIMITS = {"none": 0, "free": 10, "pro": 50, "lifetime": 99999}
 
 for directory in (UPLOADS_DIR, OUTPUTS_DIR):
     directory.mkdir(parents=True, exist_ok=True)
@@ -240,7 +240,7 @@ def maybe_reset_credits(user: dict[str, Any]) -> dict[str, Any]:
 
 
 def set_user_plan(clerk_user_id: str, email: str, plan: str) -> dict[str, Any]:
-    if plan not in {"free", "monthly", "yearly"}:
+    if plan not in {"free", "pro", "lifetime"}:
         raise HTTPException(status_code=400, detail="Invalid plan.")
     
     now = now_iso()
@@ -735,19 +735,19 @@ async def dodo_webhook(request: Request, x_dodo_signature: str = Header(None)) -
         clerk_user_id = payload.get("client_reference_id")
         
         if event_type == "payment.succeeded" and clerk_user_id:
-            # Map Product IDs to Premium Credit Tiers
+            # Map Product IDs to 'Pro' and 'Lifetime' tiers
             product_id = payload.get("product_id")
             plan = "none"
             credits_to_add = 0
             
-            # Monthly Plan: pdt_0NalSjZWHhamGs4oYJvTe
+            # PRO Plan: pdt_0NalSjZWHhamGs4oYJvTe
             if product_id == "pdt_0NalSjZWHhamGs4oYJvTe":
-                plan = "monthly"
-                credits_to_add = 100
-            # Yearly Plan: pdt_0NalSUMsJzvscQl8QNvVM
-            elif product_id == "pdt_0NalSUMsJzvscQl8QNvVM":
-                plan = "yearly"
-                credits_to_add = 1200
+                plan = "pro"
+                credits_to_add = 50
+            # LIFETIME Plan: pdt_0NavKn2G5oln4JN2cMrzM
+            elif product_id == "pdt_0NavKn2G5oln4JN2cMrzM":
+                plan = "lifetime"
+                credits_to_add = 99999 # Simulated Unlimited
                 
             if plan != "none":
                 email = payload.get("customer_email", "paid@user.com")
