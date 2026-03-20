@@ -104,6 +104,7 @@ def init_db() -> None:
                 email TEXT NOT NULL,
                 plan TEXT NOT NULL DEFAULT 'none',
                 credits_remaining INTEGER NOT NULL DEFAULT 0,
+                has_onboarded INTEGER NOT NULL DEFAULT 0,
                 last_reset_date TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
@@ -129,6 +130,11 @@ def init_db() -> None:
             );
             """
         )
+        # Migration for existing DBs
+        try:
+            connection.execute("ALTER TABLE users ADD COLUMN has_onboarded INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass # already exists
 
 
 def _safe_name(name: str | None, fallback: str) -> str:
@@ -257,15 +263,16 @@ def set_user_plan(clerk_user_id: str, email: str, plan: str) -> dict[str, Any]:
     with db() as connection:
         connection.execute(
             """
-            INSERT INTO users (clerk_user_id, email, plan, credits_remaining, last_reset_date, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO users (clerk_user_id, email, plan, credits_remaining, has_onboarded, last_reset_date, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(clerk_user_id) DO UPDATE SET
                 email = excluded.email,
                 plan = excluded.plan,
                 credits_remaining = excluded.credits_remaining,
+                has_onboarded = excluded.has_onboarded,
                 updated_at = excluded.updated_at
             """,
-            (clerk_user_id, email, final_plan, credits_to_set, now, now, now),
+            (clerk_user_id, email, final_plan, credits_to_set, 1, now, now, now),
         )
     updated = get_user(clerk_user_id)
     if not updated:

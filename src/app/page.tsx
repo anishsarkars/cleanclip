@@ -22,6 +22,7 @@ interface UserInfo {
   email: string;
   plan: "none" | Plan;
   credits_remaining: number;
+  has_onboarded: number;
   last_reset_date: string;
 }
 
@@ -94,12 +95,12 @@ export default function Home() {
   }, [isLoaded, syncUser, user]);
 
   const creditLabel = useMemo(() => {
-    if (userInfo) {
+    if (user && userInfo) {
       if (userInfo.plan === "none") return "Choose a plan to continue";
       return `${userInfo.credits_remaining} credits remaining`;
     }
-    return "3 guest exports available";
-  }, [userInfo]);
+    return "";
+  }, [user, userInfo]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -316,7 +317,7 @@ export default function Home() {
     document.body.removeChild(link);
   }, [processedUrl, selectedFile]);
 
-  const showOnboarding = Boolean(user && userInfo?.plan === "none");
+  const showOnboarding = Boolean(user && userInfo && userInfo.has_onboarded === 0);
 
   const [scrolled, setScrolled] = useState(false);
 
