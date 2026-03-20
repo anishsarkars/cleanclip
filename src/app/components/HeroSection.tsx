@@ -55,7 +55,7 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center">
         
-        <h1 className="mb-6 text-white text-5xl md:text-[88px] font-black tracking-[-0.05em] leading-[0.9] animate-fade-in shadow-text">
+        <h1 className="mb-6 text-white text-4xl md:text-5xl lg:text-[88px] font-black tracking-[-0.05em] leading-[0.9] animate-fade-in shadow-text">
            Remove video background<br className="hidden md:block" /> instantly in seconds.
         </h1>
 

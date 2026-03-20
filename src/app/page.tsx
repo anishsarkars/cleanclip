@@ -303,82 +303,78 @@ export default function Home() {
   const showOnboarding = Boolean(user && userInfo?.plan === "none");
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC]">
-      {/* Outer Card Wrap (Reference Style) */}
-      <div className="outer-shell bg-white min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-8rem)]">
-        
-        <Navbar />
+    <main className="min-h-screen bg-black">
+      <Navbar />
 
-        {showOnboarding && (
-          <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
-        )}
+      {showOnboarding && (
+        <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
+      )}
 
-        {showPaywall && (
-          <PaywallModal
-            onChoosePlan={handlePlanSelection}
-            onClose={() => setShowPaywall(false)}
-            loadingPlan={loadingPlan}
-          />
-        )}
+      {showPaywall && (
+        <PaywallModal
+          onChoosePlan={handlePlanSelection}
+          onClose={() => setShowPaywall(false)}
+          loadingPlan={loadingPlan}
+        />
+      )}
 
-        {appState === "idle" && (
-          <div className="animate-fade-in flex flex-col">
-            <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
-            
-            {/* Unified White Background Container */}
-            <div className="relative z-10 bg-white">
-               <div className="space-y-0">
-                 <HowItWorks />
-                 <PricingSection onUpgrade={handlePlanSelection} />
-                 <Footer />
-               </div>
-            </div>
-          </div>
-        )}
-
-        {appState === "processing" && selectedFile && (
-          <div className="min-h-[80vh] flex items-center justify-center p-12">
-            <ProcessingScreen 
-              fileName={selectedFile.name} 
-              progress={progress} 
-              step={step} 
-              startTime={jobStartTime}
-            />
-          </div>
-        )}
-
-        {appState === "result" && selectedFile && processedUrl && (
-          <div className="animate-fade-in pt-12">
-            <ResultSection
-              originalUrl={originalUrl}
-              processedUrl={processedUrl}
-              fileName={selectedFile.name}
-              onReset={handleReset}
-              onDownload={handleDownload}
-            />
-            <div className="mt-20">
+      {appState === "idle" && (
+        <div className="animate-fade-in flex flex-col">
+          <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
+          
+          {/* Unified White Background Container */}
+          <div className="relative z-10 bg-white">
+             <div className="space-y-0">
+               <HowItWorks />
+               <PricingSection onUpgrade={handlePlanSelection} />
                <Footer />
-            </div>
+             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {appState === "error" && (
-          <section className="flex min-h-[80vh] items-center justify-center px-6">
-            <div className="w-full max-w-xl bg-white border border-black/5 rounded-[48px] p-12 text-center shadow-xl">
-              <h2 className="text-4xl font-bold mb-4 tracking-tight text-zinc-950">Something went wrong</h2>
-              <div className="bg-zinc-50 p-6 rounded-3xl mb-10 text-left border border-black/5">
-                 <p className="font-mono text-sm leading-7 break-words text-zinc-600">{errorMsg}</p>
-              </div>
-              <button 
-                onClick={handleReset}
-                className="w-full h-14 rounded-full bg-zinc-950 text-white font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
-              >
-                Go back to home
-              </button>
+      {appState === "processing" && selectedFile && (
+        <div className="animate-fade-in">
+          <ProcessingScreen 
+            fileName={selectedFile.name} 
+            progress={progress} 
+            step={step} 
+            startTime={jobStartTime}
+          />
+        </div>
+      )}
+
+      {appState === "result" && selectedFile && processedUrl && (
+        <div className="animate-fade-in flex flex-col">
+          <ResultSection
+            originalUrl={originalUrl}
+            processedUrl={processedUrl}
+            fileName={selectedFile.name}
+            onReset={handleReset}
+            onDownload={handleDownload}
+          />
+          <div className="bg-white">
+             <Footer />
+          </div>
+        </div>
+      )}
+
+      {appState === "error" && (
+        <section className="flex min-h-screen items-center justify-center bg-black px-6">
+          <div className="w-full max-w-xl bg-white/5 border border-white/10 rounded-[64px] p-12 text-center shadow-2xl backdrop-blur-3xl">
+            <h2 className="text-4xl font-black mb-4 tracking-tight text-white">Something went wrong</h2>
+            <div className="bg-white/5 p-6 rounded-[24px] mb-10 text-left border border-white/5">
+               <p className="font-mono text-sm leading-7 break-words text-white/50">{errorMsg}</p>
             </div>
-          </section>
-        )}
-      </div>
+            <button 
+              onClick={handleReset}
+              className="w-full h-16 rounded-full bg-white text-black font-black hover:scale-[1.02] active:scale-95 transition-all shadow-xl cursor-pointer"
+            >
+              Go back home
+            </button>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
