@@ -87,13 +87,13 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
                <Upload className="w-14 h-14 text-white" strokeWidth={1} />
             </div>
 
-            <h2 className="mb-2 text-[32px] font-bold tracking-tight text-white">
+            <h2 className="mb-2 text-[32px] font-extrabold tracking-tight text-white">
                Drag & Drop to upload
             </h2>
-            <p className="text-white/60 font-medium text-lg">
-               or <span className="underline decoration-white/30 underline-offset-4 hover:text-white transition-colors">browse files</span>
+            <p className="text-white font-medium text-lg">
+               or <span className="underline decoration-white/50 underline-offset-4 hover:text-blue-50 transition-colors">browse files</span>
             </p>
-            <p className="mt-4 text-white/40 text-sm font-bold uppercase tracking-widest">
+            <p className="mt-4 text-white/60 text-sm font-bold uppercase tracking-widest">
                MP4, MOV, PNG, JPG (max. 100MB)
             </p>
 
