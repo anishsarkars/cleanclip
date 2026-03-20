@@ -18,7 +18,7 @@ export default function Navbar() {
       </Link>
 
       <div className="hidden lg:flex gap-10 text-[14px] font-black uppercase tracking-[0.2em] text-white/40">
-        <Link href="/" className="hover:text-white transition-colors no-underline">Works</Link>
+        <Link href="#how-it-works" className="hover:text-white transition-colors no-underline">Works</Link>
         <Link href="#pricing" className="hover:text-white transition-colors no-underline">Pricing</Link>
       </div>
 

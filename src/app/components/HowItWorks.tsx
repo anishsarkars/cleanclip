@@ -17,8 +17,8 @@ const STEPS = [
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="bg-white py-24 md:py-32">
-      <div className="section-container">
+    <section id="how-it-works" className="bg-white pt-12 md:pt-7 pb-24 md:pb-20">
+      <div className="section-container translate-y-[-60px]">
         <div className="mb-20 text-center animate-fade-in">
           <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">
             How it works

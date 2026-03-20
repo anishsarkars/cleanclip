@@ -146,23 +146,24 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
 
       <style jsx>{`
         @keyframes cloud-drift {
-          0% { transform: translateX(0) scale(1.1); }
-          50% { transform: translateX(10%) scale(1.2); }
-          100% { transform: translateX(0) scale(1.1); }
+          0% { transform: translateX(0) translateY(0) scale(1.1) rotate(0deg); opacity: 0.5; filter: blur(2px); }
+          33% { transform: translateX(5%) translateY(-10px) scale(1.15) rotate(1deg); opacity: 0.7; filter: blur(0px); }
+          66% { transform: translateX(-2%) translateY(5px) scale(1.12) rotate(-0.5deg); opacity: 0.6; filter: blur(4px); }
+          100% { transform: translateX(0) translateY(0) scale(1.1) rotate(0deg); opacity: 0.5; filter: blur(2px); }
         }
         @keyframes cloud-float-slow {
-          0% { transform: translateY(0); }
-          50% { transform: translateY(-50px); }
-          100% { transform: translateY(0); }
+          0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.7; }
+          50% { transform: translateY(-40px) translateX(3%) scale(1.05) rotate(0.5deg); opacity: 0.9; }
+          100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.7; }
         }
         @keyframes cloud-pulse {
-          0% { opacity: 0.8; transform: translateY(0); }
-          50% { opacity: 1.0; transform: translateY(-25px); }
-          100% { opacity: 0.8; transform: translateY(0); }
+          0% { opacity: 0.85; transform: translateY(0) scale(1); filter: brightness(1); }
+          50% { opacity: 1.0; transform: translateY(-20px) scale(1.02) filter: brightness(1.2); }
+          100% { opacity: 0.85; transform: translateY(0) scale(1) filter: brightness(1); }
         }
-        .animate-cloud-drift { animation: cloud-drift 30s ease-in-out infinite; }
-        .animate-cloud-float-slow { animation: cloud-float-slow 20s ease-in-out infinite; }
-        .animate-cloud-pulse { animation: cloud-pulse 15s ease-in-out infinite; }
+        .animate-cloud-drift { animation: cloud-drift 45s ease-in-out infinite; }
+        .animate-cloud-float-slow { animation: cloud-float-slow 35s ease-in-out infinite; }
+        .animate-cloud-pulse { animation: cloud-pulse 25s ease-in-out infinite; }
       `}</style>
     </section>
   );
