@@ -302,79 +302,92 @@ export default function Home() {
 
   const showOnboarding = Boolean(user && userInfo?.plan === "none");
 
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <main className="min-h-screen bg-black">
-      <Navbar />
-
-      {showOnboarding && (
-        <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
-      )}
-
-      {showPaywall && (
-        <PaywallModal
-          onChoosePlan={handlePlanSelection}
-          onClose={() => setShowPaywall(false)}
-          loadingPlan={loadingPlan}
-        />
-      )}
-
-      {appState === "idle" && (
-        <div className="animate-fade-in flex flex-col">
-          <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
+    <main className="min-h-screen bg-[#F8FAFC]">
+      <div className={`transition-all duration-700 ${scrolled ? "p-4 md:p-6" : "p-0"}`}>
+        <div className={`relative overflow-hidden transition-all duration-1000 bg-black ${scrolled ? "rounded-[48px] md:rounded-[64px] shadow-2xl" : "rounded-none"}`}>
           
-          {/* Unified White Background Container */}
-          <div className="relative z-10 bg-white">
-             <div className="space-y-0">
-               <HowItWorks />
-               <PricingSection onUpgrade={handlePlanSelection} />
-               <Footer />
-             </div>
-          </div>
-        </div>
-      )}
+          <Navbar />
 
-      {appState === "processing" && selectedFile && (
-        <div className="animate-fade-in">
-          <ProcessingScreen 
-            fileName={selectedFile.name} 
-            progress={progress} 
-            step={step} 
-            startTime={jobStartTime}
-          />
-        </div>
-      )}
+          {showOnboarding && (
+            <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
+          )}
 
-      {appState === "result" && selectedFile && processedUrl && (
-        <div className="animate-fade-in flex flex-col">
-          <ResultSection
-            originalUrl={originalUrl}
-            processedUrl={processedUrl}
-            fileName={selectedFile.name}
-            onReset={handleReset}
-            onDownload={handleDownload}
-          />
-          <div className="bg-white">
-             <Footer />
-          </div>
-        </div>
-      )}
+          {showPaywall && (
+            <PaywallModal
+              onChoosePlan={handlePlanSelection}
+              onClose={() => setShowPaywall(false)}
+              loadingPlan={loadingPlan}
+            />
+          )}
 
-      {appState === "error" && (
-        <section className="flex min-h-screen items-center justify-center bg-black px-6">
-          <div className="w-full max-w-xl bg-white/5 border border-white/10 rounded-[64px] p-12 text-center shadow-2xl backdrop-blur-3xl">
-            <h2 className="text-4xl font-black mb-4 tracking-tight text-white">Something went wrong</h2>
-            <div className="bg-white/5 p-6 rounded-[24px] mb-10 text-left border border-white/5">
-               <p className="font-mono text-sm leading-7 break-words text-white/50">{errorMsg}</p>
+          {appState === "idle" && (
+            <div className="animate-fade-in flex flex-col">
+              <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
+              
+              {/* Unified White Background Container */}
+              <div className="relative z-10 bg-white">
+                 <div className="space-y-0">
+                   <HowItWorks />
+                   <PricingSection onUpgrade={handlePlanSelection} />
+                   <Footer />
+                 </div>
+              </div>
             </div>
-            <button 
-              onClick={handleReset}
-              className="w-full h-16 rounded-full bg-white text-black font-black hover:scale-[1.02] active:scale-95 transition-all shadow-xl cursor-pointer"
-            >
-              Go back home
-            </button>
-          </div>
-        </section>
-      )}
+          )}
+
+          {appState === "processing" && selectedFile && (
+            <div className="animate-fade-in">
+              <ProcessingScreen 
+                fileName={selectedFile.name} 
+                progress={progress} 
+                step={step} 
+                startTime={jobStartTime}
+              />
+            </div>
+          )}
+
+          {appState === "result" && selectedFile && processedUrl && (
+            <div className="animate-fade-in flex flex-col">
+              <ResultSection
+                originalUrl={originalUrl}
+                processedUrl={processedUrl}
+                fileName={selectedFile.name}
+                onReset={handleReset}
+                onDownload={handleDownload}
+              />
+              <div className="bg-white">
+                 <Footer />
+              </div>
+            </div>
+          )}
+
+          {appState === "error" && (
+            <section className="flex min-h-screen items-center justify-center bg-black px-6">
+              <div className="w-full max-w-xl bg-white/5 border border-white/10 rounded-[64px] p-12 text-center shadow-2xl backdrop-blur-3xl">
+                <h2 className="text-4xl font-black mb-4 tracking-tight text-white">Something went wrong</h2>
+                <div className="bg-white/5 p-6 rounded-[24px] mb-10 text-left border border-white/5">
+                   <p className="font-mono text-sm leading-7 break-words text-white/50">{errorMsg}</p>
+                </div>
+                <button 
+                  onClick={handleReset}
+                  className="w-full h-16 rounded-full bg-white text-black font-black hover:scale-[1.02] active:scale-95 transition-all shadow-xl cursor-pointer"
+                >
+                  Go back home
+                </button>
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

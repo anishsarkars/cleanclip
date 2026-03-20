@@ -31,36 +31,36 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
   );
 
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-60 pt-48">
+    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-60 pt-60 md:pt-72">
       {/* 🌌 Cinematic OLED Pure Black to Blue Gradient */}
       <div className="absolute inset-0 bg-[#000000] -z-30" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#000000]/80 via-[#1E293B]/40 to-[#2563EB]/40 -z-20" />
-      
+
       {/* ☁️ High Quality Photographic Cloud Transition Layer */}
       <div className="absolute inset-x-0 bottom-0 h-[600px] pointer-events-none z-0">
-          <div 
-             className="absolute bottom-0 left-[-20%] right-[-20%] h-full bg-cover bg-bottom animate-cloud-float-slow opacity-90 transition-all duration-[30s]"
-             style={{ 
-               backgroundImage: `url('/bg-clouds-photo.png')`,
-               maskImage: 'linear-gradient(to top, black 20%, transparent 100%)',
-               WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent 100%)'
-             }}
-          />
-          {/* Ambient blur to soften the photographic edges */}
-          <div className="absolute bottom-[-100px] left-[-10%] right-[-10%] h-[400px] bg-white blur-[120px] rounded-full opacity-40 mix-blend-screen" />
+        <div
+          className="absolute bottom-0 left-[-20%] right-[-20%] h-full bg-cover bg-bottom animate-cloud-float-slow opacity-90 transition-all duration-[30s]"
+          style={{
+            backgroundImage: `url('/bg-clouds-photo.png')`,
+            maskImage: 'linear-gradient(to top, black 20%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent 100%)'
+          }}
+        />
+        {/* Ambient blur to soften the photographic edges */}
+        <div className="absolute bottom-[-100px] left-[-10%] right-[-10%] h-[400px] bg-white blur-[120px] rounded-full opacity-40 mix-blend-screen" />
       </div>
 
       {/* 🌫️ Deep fluffy transition vignette to white */}
       <div className="absolute inset-x-0 bottom-0 h-[320px] bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center">
-        
-        <h1 className="mb-6 text-white text-4xl md:text-5xl lg:text-7xl font-bold tracking-[-0.03em] leading-tight animate-fade-in shadow-text">
-           Remove background instantly.
+
+        <h1 className="mb-3 text-white text-1xl md:text-3xl lg:text-7xl font-bold tracking-[-0.03em] leading-tight animate-fade-in shadow-text">
+          Remove video background in seconds.
         </h1>
 
         <p className="mb-14 max-w-[520px] text-lg font-medium text-white/50 md:text-[20px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
-           Clean your video assets with industrial-grade AI.
+          Clean your video assets with AI.
         </p>
 
         {/* The Defined Black-Border Upload Card */}
@@ -78,24 +78,23 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               if (file) handleFile(file);
             }}
             onClick={() => inputRef.current?.click()}
-            className={`group md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[64px] border-[1.5px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-16 px-8 ${
-              isDragging
-                ? "border-white bg-white/20"
-                : "border-black/5 hover:border-black/20 hover:bg-white/10"
-            }`}
+            className={`group md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[64px] border-[1.5px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-16 px-8 ${isDragging
+              ? "border-white bg-white/20"
+              : "border-black/5 hover:border-black/20 hover:bg-white/10"
+              }`}
           >
             <div className="mb-12 flex h-24 w-24 items-center justify-center bg-white/5 rounded-[40px] border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
-               <Upload className="w-12 h-12 text-white" strokeWidth={1} />
+              <Upload className="w-12 h-12 text-white" strokeWidth={1} />
             </div>
 
             <h2 className="mb-3 text-[38px] font-black tracking-tighter text-white shadow-text">
-               Drag & Drop to upload
+              Drag & Drop to upload
             </h2>
             <p className="text-white font-bold text-xl shadow-subtext opacity-50">
-               or <span className="underline decoration-white/40 underline-offset-8 hover:opacity-100 transition-all">browse files</span>
+              or <span className="underline decoration-white/40 underline-offset-8 hover:opacity-100 transition-all">browse files</span>
             </p>
             <p className="mt-14 text-white/20 text-[12px] font-black uppercase tracking-[0.3em] shadow-subtext">
-               MP4, MOV, GIF (MAX. 20MB)
+              MP4, MOV, GIF (MAX. 20MB)
             </p>
 
             <input
@@ -115,10 +114,10 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               {error}
             </div>
           )}
-          
+
           {helperText && !error && (
             <div className="animate-fade-in mt-16 text-sm font-black text-white uppercase tracking-[0.3em] shadow-subtext opacity-30">
-               {helperText}
+              {helperText}
             </div>
           )}
         </div>
