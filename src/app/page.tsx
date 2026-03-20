@@ -327,7 +327,6 @@ export default function Home() {
               onChoosePlan={handlePlanSelection}
               onClose={() => setShowPaywall(false)}
               loadingPlan={loadingPlan}
-              onUpgrade={handlePlanSelection}
             />
           )}
 
