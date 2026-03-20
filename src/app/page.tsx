@@ -11,6 +11,7 @@ import PaywallModal from "./components/PaywallModal";
 import PricingSection from "./components/PricingSection";
 import ProcessingScreen from "./components/ProcessingScreen";
 import ResultSection from "./components/ResultSection";
+import PromoBanner from "./components/PromoBanner";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -331,6 +332,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] font-sans">
+      <PromoBanner />
       <div className="p-0">
         <div className="relative overflow-hidden bg-black rounded-none">
           
