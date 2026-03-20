@@ -15,8 +15,8 @@
   }
 
   body {
-    @apply m-0 p-0 font-sans bg-[#81CCFC] text-white antialiased overflow-x-hidden;
-    background: radial-gradient(circle at center, #81CCFC 0%, #3DA1F5 100%);
+    @apply m-0 p-0 font-sans bg-[#0026CC] text-white antialiased overflow-x-hidden;
+    background: radial-gradient(circle at top, #0033FF 0%, #001A99 100%);
   }
 }
 
@@ -106,28 +106,18 @@
   animation: float 5s ease-in-out infinite;
 }
 
-/* Framer Glass Style */
-.glass-panel {
-  @apply bg-white/10 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.05)];
+/* Deep Glass Style */
+.glass-container {
+  @apply bg-white/5 backdrop-blur-3xl border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.3)];
 }
 
-.glass-pill {
-  @apply rounded-full bg-white/80 backdrop-blur-xl border border-white shadow-[0_4px_24px_rgba(0,0,0,0.04)];
+.glass-card-inner {
+  @apply bg-white/10 backdrop-blur-2xl border border-white/20 shadow-xl;
 }
 
-/* Background Rings */
-.bg-ring {
-  @apply absolute rounded-full border border-white/10 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none;
-}
-
-@keyframes ring-pulse {
-  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.1; }
-  50% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.05; }
-  100% { transform: translate(-50%, -50%) scale(1); opacity: 0.1; }
-}
-
-.animate-ring {
-  animation: ring-pulse 6s ease-in-out infinite;
+/* Sharp background rings */
+.bg-ring-line {
+  @apply absolute rounded-full border border-white/5 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none;
 }
 
 /* 3D Float icon */

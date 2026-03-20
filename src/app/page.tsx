@@ -259,21 +259,22 @@ export default function Home() {
   return (
     <main className="min-h-screen relative overflow-hidden">
       
-      {/* Background Rings & Effects (Framer Style) */}
+      {/* Background Orbital Rings (Dashboard Style) */}
       <div className="fixed inset-0 pointer-events-none z-0">
-          <div className="bg-ring h-[400px] w-[400px] top-1/2 left-1/2 animate-ring opacity-10" />
-          <div className="bg-ring h-[800px] w-[800px] top-1/2 left-1/2 animate-ring opacity-5 delay-1000" />
-          <div className="bg-ring h-[1200px] w-[1200px] top-1/2 left-1/2 animate-ring opacity-5 delay-2000" />
+          <div className="bg-ring-line h-[500px] w-[500px] top-1/2 left-1/2" />
+          <div className="bg-ring-line h-[800px] w-[800px] top-1/2 left-1/2" />
+          <div className="bg-ring-line h-[1200px] w-[1200px] top-1/2 left-1/2" />
+          <div className="bg-ring-line h-[1600px] w-[1600px] top-1/2 left-1/2" />
           
-          <div className="absolute top-20 right-[10%] h-[300px] w-[300px] bg-white opacity-20 blur-[120px] rounded-full" />
-          <div className="absolute bottom-20 left-[10%] h-[400px] w-[400px] bg-blue-400 opacity-20 blur-[150px] rounded-full" />
+          <div className="absolute top-0 right-[-10%] h-[600px] w-[600px] bg-blue-500 opacity-20 blur-[180px] rounded-full" />
+          <div className="absolute bottom-[-10%] left-[-10%] h-[600px] w-[600px] bg-indigo-600 opacity-10 blur-[180px] rounded-full" />
       </div>
 
-      <div className="relative z-50 pt-10 px-6">
+      <div className="relative z-50 pt-8 px-6">
         <Navbar />
       </div>
 
-      <div className="relative z-10 pt-20 pb-40">
+      <div className="relative z-10 pt-10 pb-20">
         {appState === "idle" && (
           <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
         )}

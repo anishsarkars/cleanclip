@@ -8,20 +8,24 @@ export default function Navbar() {
     <div className="w-full flex justify-center sticky top-10 shrink-0">
       <nav className="glass-pill h-20 px-8 flex items-center justify-between w-full max-w-4xl transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
         
-        {/* Left: Logo (Neural Squircle style from reference) */}
+        {/* Left: Logo (CC Shutter style) */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="h-12 w-12 rounded-[16px] bg-zinc-950 flex items-center justify-center shadow-xl transition-all group-hover:scale-105">
-             <div className="h-6 w-6 rounded-full border-[3px] border-blue-400 bg-blue-500/20 animate-pulse" />
+          <div className="h-10 w-16 rounded-[12px] bg-white flex items-center justify-center shadow-lg transition-all group-hover:scale-110">
+             <div className="flex items-center gap-1">
+                <span className="text-zinc-950 font-black text-xl tracking-tighter">CC</span>
+                <div className="h-4 w-4 rounded-full border-2 border-zinc-950 flex items-center justify-center">
+                   <div className="h-1 w-1 bg-zinc-950 rounded-full" />
+                </div>
+             </div>
           </div>
-          <span className="text-2xl font-black tracking-[-0.08em] text-zinc-950 uppercase">CleanClip</span>
         </Link>
 
-        {/* Center: Social/Links */}
+        {/* Center: Links (White on Blue) */}
         <div className="hidden md:flex items-center gap-10">
-           <Link href="/" className="text-[14px] font-bold text-zinc-500 hover:text-zinc-950 transition-colors">Home</Link>
+           <Link href="/" className="text-[14px] font-medium text-white/60 hover:text-white transition-colors">Home</Link>
            <button 
               onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-              className="text-[14px] font-bold text-zinc-500 hover:text-zinc-950 transition-colors cursor-pointer"
+              className="text-[14px] font-medium text-white/60 hover:text-white transition-colors cursor-pointer"
            >
               Solutions
            </button>
