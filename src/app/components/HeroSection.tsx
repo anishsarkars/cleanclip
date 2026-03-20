@@ -36,34 +36,53 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
       <div className="absolute inset-0 bg-[#000000] -z-30" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#000000]/80 via-[#1E293B]/40 to-[#2563EB]/40 -z-20" />
 
-      {/* ☁️ High Quality Photographic Cloud Transition Layer */}
-      <div className="absolute inset-x-0 bottom-0 h-[600px] pointer-events-none z-0">
-        <div
-          className="absolute bottom-0 left-[-20%] right-[-20%] h-full bg-cover bg-bottom animate-cloud-float-slow opacity-90 transition-all duration-[30s]"
-          style={{
-            backgroundImage: `url('/bg-clouds-photo.png')`,
-            maskImage: 'linear-gradient(to top, black 20%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent 100%)'
-          }}
-        />
-        {/* Ambient blur to soften the photographic edges */}
-        <div className="absolute bottom-[-100px] left-[-10%] right-[-10%] h-[400px] bg-white blur-[120px] rounded-full opacity-40 mix-blend-screen" />
+      {/* ☁️ Multi-Layer High-Definition Cloud Orchestration (Constant Overflow) */}
+      <div className="absolute inset-x-0 bottom-0 h-[700px] pointer-events-none z-0">
+          {/* Layer 1: Atmospheric Deep Drift */}
+          <div 
+             className="absolute bottom-[-50px] left-[-30%] right-[-30%] h-full bg-cover bg-bottom animate-cloud-drift opacity-40 mix-blend-screen scale-110"
+             style={{ 
+               backgroundImage: `url('/bg-clouds-photo.png')`,
+               maskImage: 'linear-gradient(to top, black 30%, transparent 100%)',
+               WebkitMaskImage: 'linear-gradient(to top, black 30%, transparent 100%)'
+             }}
+          />
+          {/* Layer 2: Ethereal Floating Mass */}
+          <div 
+             className="absolute bottom-[-100px] left-[-20%] right-[-20%] h-full bg-cover bg-bottom animate-cloud-float-slow opacity-60 mix-blend-screen"
+             style={{ 
+               backgroundImage: `url('/bg-clouds-photo.png')`,
+               maskImage: 'linear-gradient(to top, black 20%, transparent 100%)',
+               WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent 100%)'
+             }}
+          />
+          {/* Layer 3: Central High-Quality Base */}
+          <div 
+             className="absolute bottom-[-150px] left-[-10%] right-[-10%] h-full bg-cover bg-bottom animate-cloud-pulse opacity-80"
+             style={{ 
+               backgroundImage: `url('/bg-clouds-photo.png')`,
+               maskImage: 'linear-gradient(to top, black 10%, transparent 100%)',
+               WebkitMaskImage: 'linear-gradient(to top, black 10%, transparent 100%)'
+             }}
+          />
+          {/* Layer 4: Soft Ambient Bloom */}
+          <div className="absolute bottom-[-200px] left-[-15%] right-[-15%] h-[500px] bg-white blur-[140px] rounded-full opacity-60 mix-blend-overlay animate-pulse" />
       </div>
 
-      {/* 🌫️ Deep fluffy transition vignette to white */}
-      <div className="absolute inset-x-0 bottom-0 h-[320px] bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10" />
+      {/* 🌫️ Constant High-Quality Overflow Transition to White */}
+      <div className="absolute inset-x-0 bottom-0 h-[400px] bg-gradient-to-t from-white via-white/100 to-transparent pointer-events-none z-10" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center">
 
-        <h1 
-          className="mb-3 text-white text-1xl md:text-8xl lg:text-7xl font-bold tracking-[-0.03em] leading-tight animate-fade-in shadow-text" 
-          style={{ marginTop: '-95px' }}
+        <h1
+          className="mb-3 text-white text-1xl md:text-8xl lg:text-7xl font-medium tracking-[-0.03em] leading-tight animate-fade-in shadow-text"
+          style={{ marginTop: '-100px' }}
         >
           Remove video background in seconds.
         </h1>
 
         <p className="mb-14 max-w-[520px] text-lg font-medium text-white/50 md:text-[20px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
-          Clean your video assets with AI.
+          Clean your video's or gif's background with AI.
         </p>
 
         {/* The Defined Black-Border Upload Card */}
@@ -127,12 +146,24 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
       </div>
 
       <style jsx>{`
+        @keyframes cloud-drift {
+          0% { transform: translateX(0) scale(1.1); }
+          50% { transform: translateX(5%) scale(1.15); }
+          100% { transform: translateX(0) scale(1.1); }
+        }
         @keyframes cloud-float-slow {
           0% { transform: translateY(0); }
-          50% { transform: translateY(-40px); }
+          50% { transform: translateY(-30px); }
           100% { transform: translateY(0); }
         }
+        @keyframes cloud-pulse {
+          0% { opacity: 0.7; transform: translateY(0); }
+          50% { opacity: 0.9; transform: translateY(-15px); }
+          100% { opacity: 0.7; transform: translateY(0); }
+        }
+        .animate-cloud-drift { animation: cloud-drift 30s ease-in-out infinite; }
         .animate-cloud-float-slow { animation: cloud-float-slow 20s ease-in-out infinite; }
+        .animate-cloud-pulse { animation: cloud-pulse 15s ease-in-out infinite; }
       `}</style>
     </section>
   );
