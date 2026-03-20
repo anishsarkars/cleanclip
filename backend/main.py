@@ -485,7 +485,7 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                 })
                 
                 # Persist to DB less frequently to save IO and avoid locks
-                if frame_idx % 50 == 0:
+                if frame_idx % 100 == 0:
                     persist_job(job_id)
             
             cap.release()
@@ -642,8 +642,9 @@ async def process_video(
         "error": None,
         "created_at": now_iso(),
     }
+    # Persist IMMEDIATELY so other workers/status polls see it at 30%
     persist_job(job_id)
-
+    
     background_tasks.add_task(_process_job, job_id, input_path, str(clerk_user_id) if clerk_user_id else None, guest_id)
     return {
         "job_id": job_id,
