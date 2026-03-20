@@ -97,7 +97,7 @@ def db() -> sqlite3.Connection:
 
 def init_db() -> None:
     with db() as connection:
-      connection.executescript(
+        connection.executescript(
             """
             CREATE TABLE IF NOT EXISTS users (
                 clerk_user_id TEXT PRIMARY KEY,
