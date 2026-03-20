@@ -29,6 +29,10 @@ export default function Home() {
   const { user, isLoaded } = useUser();
   const { openSignUp } = useClerk();
 
+  useEffect(() => {
+    console.log("CleanClip Initialized. API URL:", API);
+  }, []);
+
   const [appState, setAppState] = useState<AppState>("idle");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [originalUrl, setOriginalUrl] = useState("");
@@ -136,16 +140,26 @@ export default function Home() {
 
   const handleFileSelected = useCallback(
     async (file: File) => {
-      if (user && userInfo?.plan === "none") return;
+      // If user is logged in but has no plan, wait for onboarding
+      if (user && userInfo?.plan === "none") {
+        setHelperText("Please select a plan to continue.");
+        return;
+      }
 
       setHelperText(null);
       setSelectedFile(file);
       setOriginalUrl(URL.createObjectURL(file));
       setProgress(0);
-      setStep("Uploading");
+      setStep("Preparing upload...");
       setAppState("processing");
 
+      // Start a fake progress interval (0 to 15%) while uploading
+      const uploadSim = setInterval(() => {
+        setProgress((prev) => (prev < 15 ? prev + 1 : prev));
+      }, 300);
+
       try {
+        setStep("Uploading to server");
         const formData = new FormData();
         formData.append("file", file);
         if (user) formData.append("clerk_user_id", user.id);
@@ -154,6 +168,8 @@ export default function Home() {
           method: "POST",
           body: formData,
         });
+        
+        clearInterval(uploadSim); // Done uploading
         const data = await response.json();
 
         if (!response.ok) {
@@ -175,8 +191,11 @@ export default function Home() {
           throw new Error(data.detail || "Upload failed.");
         }
 
+        setProgress(15);
+        setStep("Received by server");
         pollStatus(data.job_id);
       } catch (error) {
+        clearInterval(uploadSim);
         setErrorMsg(error instanceof Error ? error.message : "Upload failed.");
         setAppState("error");
       }

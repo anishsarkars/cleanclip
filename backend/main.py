@@ -30,19 +30,22 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent
 UPLOADS_DIR = BASE_DIR / "uploads"
 OUTPUTS_DIR = BASE_DIR / "outputs"
-WORK_DIR = BASE_DIR / "work"
 DB_PATH = BASE_DIR / "cleanclip.db"
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 ALLOWED_SUFFIXES = {".mp4", ".mov", ".webm", ".gif"}
 PLAN_LIMITS = {"none": 0, "free": 10, "monthly": 50, "yearly": 50}
 
-for directory in (UPLOADS_DIR, OUTPUTS_DIR, WORK_DIR):
+for directory in (UPLOADS_DIR, OUTPUTS_DIR):
     directory.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="CleanClip API", version="4.0.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://cleanclip.vercel.app",
+        "https://cleanclip-git-main-anishsarkars-projects.vercel.app", # Vercel preview branch
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -145,59 +148,9 @@ def _get_video_meta(path: Path) -> VideoMeta:
 def _run_ffmpeg(command: list[str]) -> None:
     completed = subprocess.run(command, capture_output=True, text=True)
     if completed.returncode != 0:
-        raise RuntimeError(completed.stderr.strip() or "FFmpeg command failed.")
-
-
-def _extract_frames(input_path: Path, frames_dir: Path) -> int:
-    frames_dir.mkdir(parents=True, exist_ok=True)
-    output_pattern = frames_dir / "frame_%06d.png"
-    _run_ffmpeg(
-        [
-            FFMPEG_EXE,
-            "-y",
-            "-i",
-            str(input_path),
-            "-vsync",
-            "0",
-            "-pix_fmt",
-            "rgba",
-            str(output_pattern),
-        ]
-    )
-    return len(list(frames_dir.glob("frame_*.png")))
-
-
-def _encode_output(frames_dir: Path, fps: float, output_path: Path) -> None:
-    input_pattern = frames_dir / "frame_%06d.png"
-    _run_ffmpeg(
-        [
-            FFMPEG_EXE,
-            "-y",
-            "-framerate",
-            f"{fps}",
-            "-i",
-            str(input_pattern),
-            "-c:v",
-            "libvpx-vp9",
-            "-pix_fmt",
-            "yuva420p",
-            "-auto-alt-ref",
-            "0",
-            "-crf",
-            "25",
-            "-b:v",
-            "0",
-            "-metadata:s:v:0",
-            "alpha_mode=1",
-            str(output_path),
-        ]
-    )
-
-
-def _process_frame(frame_path: Path) -> None:
-    with Image.open(frame_path) as source:
-        result = remove(source.convert("RGBA"), session=rembg_session).convert("RGBA")
-        result.save(frame_path)
+        error_msg = completed.stderr.strip() or "FFmpeg command failed."
+        print(f"FFmpeg error: {error_msg}")
+        raise RuntimeError(error_msg)
 
 
 def get_user(clerk_user_id: str) -> dict[str, Any] | None:
@@ -373,75 +326,149 @@ def persist_job(job_id: str) -> None:
 
 
 async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None, guest_id: str | None) -> None:
-    work_dir = WORK_DIR / job_id
-    frames_dir = work_dir / "frames"
     output_path = OUTPUTS_DIR / f"{job_id}.webm"
-    work_dir.mkdir(parents=True, exist_ok=True)
-
+    temp_output = OUTPUTS_DIR / f"{job_id}_tmp.webm"
+    
     try:
         jobs[job_id].update({"status": "processing", "progress": 5, "step": "Inspecting video"})
         persist_job(job_id)
         meta = _get_video_meta(input_path)
+        
+        # Start FFmpeg as a subprocess for streaming output
+        ffmpeg_cmd = [
+            FFMPEG_EXE,
+            "-y",
+            "-f", "rawvideo",
+            "-vcodec", "rawvideo",
+            "-s", f"{meta.width}x{meta.height}",
+            "-pix_fmt", "rgba",
+            "-r", f"{meta.fps}",
+            "-i", "-",  # Read from stdin
+            "-c:v", "libvpx-vp9",
+            "-pix_fmt", "yuva420p",
+            "-auto-alt-ref", "0",
+            "-crf", "25",
+            "-b:v", "0",
+            "-metadata:s:v:0", "alpha_mode=1",
+            str(temp_output),
+        ]
+        
+        # We redirect stderr to a temporary file instead of a pipe to avoid blocking
+        log_path = OUTPUTS_DIR / f"{job_id}_ffmpeg.log"
+        with open(log_path, "wb") as log_file:
+            process = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE, stderr=log_file)
+            
+            cap = cv2.VideoCapture(str(input_path))
+            total_frames = meta.frame_count
+            frame_idx = 0
+            
+            if not cap.isOpened():
+                raise RuntimeError("OpenCV failed to open the video file.")
 
-        jobs[job_id].update({"progress": 12, "step": "Extracting frames"})
-        persist_job(job_id)
-        extracted_count = await asyncio.get_running_loop().run_in_executor(
-            executor,
-            _extract_frames,
-            input_path,
-            frames_dir,
-        )
-
-        if extracted_count == 0:
-            raise RuntimeError("No frames were extracted from the uploaded file.")
-
-        frame_paths = sorted(frames_dir.glob("frame_*.png"))
-        total_frames = len(frame_paths)
-        loop = asyncio.get_running_loop()
-
-        for index, frame_path in enumerate(frame_paths, start=1):
-            await loop.run_in_executor(executor, _process_frame, frame_path)
-            jobs[job_id].update(
-                {
-                    "progress": 12 + int((index / total_frames) * 72),
-                    "step": f"Removing background {index}/{total_frames}",
-                }
-            )
+            jobs[job_id].update({"progress": 10, "step": "Processing frames (streaming)"})
             persist_job(job_id)
 
-        jobs[job_id].update({"progress": 90, "step": "Encoding result"})
-        persist_job(job_id)
-        await loop.run_in_executor(executor, _encode_output, frames_dir, meta.fps, output_path)
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    if frame_idx == 0:
+                        raise RuntimeError("Failed to read any frames from the video.")
+                    break
+                
+                # Convert OpenCV (BGR) to PIL (RGBA)
+                try:
+                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    pil_img = Image.fromarray(frame_rgb).convert("RGBA")
+                    
+                    # Remove background
+                    # Fallback to session=None if session failed to init (slow but works)
+                    processed_pil = remove(pil_img, session=rembg_session).convert("RGBA")
+                    
+                    # Write to FFmpeg stdin
+                    if process.stdin:
+                        process.stdin.write(processed_pil.tobytes())
+                        process.stdin.flush()
+                except Exception as e:
+                    print(f"Frame {frame_idx} processing error: {e}")
+                    # Continue anyway to see if next frames work
+                
+                frame_idx += 1
+                if frame_idx % 5 == 0:
+                    progress = 10 + int((frame_idx / (total_frames or 1)) * 85)
+                    jobs[job_id].update({
+                        "progress": min(progress, 95),
+                        "step": f"Removing background {frame_idx}/{total_frames}"
+                    })
+                    persist_job(job_id)
+            
+            cap.release()
+            if process.stdin:
+                try:
+                    process.stdin.close()
+                except:
+                    pass
+            
+            process.wait()
 
+        # Check if output exists and is non-empty
+        if not temp_output.exists() or temp_output.stat().st_size < 100:
+             # Read log for error
+             err_msg = "Unknown FFmpeg error"
+             if log_path.exists():
+                 with open(log_path, "r", errors="ignore") as f:
+                     err_msg = f.read()[-500:] # Last 500 chars
+             raise RuntimeError(f"FFmpeg failed to produce output. Error: {err_msg}")
+        
+        # Cleanup log
+        log_path.unlink(missing_ok=True)
+
+        # Final step: Merge audio from the original video if it exists
+        jobs[job_id].update({"progress": 98, "step": "Finalizing with audio"})
+        persist_job(job_id)
+        
+        try:
+             _run_ffmpeg([
+                FFMPEG_EXE, "-y",
+                "-i", str(temp_output),
+                "-i", str(input_path),
+                "-map", "0:v",
+                "-map", "1:a?",  # Map audio if it exists, don't fail if not
+                "-c:v", "copy",
+                "-c:a", "libopus", # Opus is good for WebM
+                "-shortest",
+                str(output_path)
+            ])
+        except Exception:
+            # If merging audio fails, just copy the temp output to the final output
+            shutil.copy(temp_output, output_path)
+            
         if owner_user_id:
             deduct_user_credit(owner_user_id)
         elif guest_id:
             increment_guest_usage(guest_id)
 
-        jobs[job_id].update(
-            {
-                "status": "done",
-                "progress": 100,
-                "step": "Ready",
-                "output_path": str(output_path),
-                "result_url": f"/result/{job_id}",
-                "error": None,
-            }
-        )
+        jobs[job_id].update({
+            "status": "done",
+            "progress": 100,
+            "step": "Ready",
+            "output_path": str(output_path),
+            "result_url": f"/result/{job_id}",
+            "error": None,
+        })
         persist_job(job_id)
+        
     except Exception as exc:
-        jobs[job_id].update(
-            {
-                "status": "error",
-                "progress": 100,
-                "step": "Failed",
-                "error": str(exc),
-            }
-        )
+        print(f"Job {job_id} failed: {exc}")
+        jobs[job_id].update({
+            "status": "error",
+            "progress": 100,
+            "step": "Failed",
+            "error": str(exc),
+        })
         persist_job(job_id)
     finally:
         input_path.unlink(missing_ok=True)
-        shutil.rmtree(work_dir, ignore_errors=True)
+        temp_output.unlink(missing_ok=True)
 
 
 @app.on_event("startup")

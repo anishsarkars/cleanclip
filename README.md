@@ -1,3 +1,13 @@
+---
+title: Cleanclip
+emoji: 🎬
+colorFrom: indigo
+colorTo: slate
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
