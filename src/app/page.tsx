@@ -120,11 +120,11 @@ export default function Home() {
           if (data.created_at) setJobStartTime(data.created_at);
           const newProgress = data.progress ?? 0;
           setProgress((prev) => {
-            // If backend progress is actually ahead, jump to it
+            // Jump if backend is clearly ahead
             if (newProgress > prev) return newProgress;
-            // Otherwise, drift slowly forward (0.1% every 250ms) to show "life"
-            // Cap drift at 95% so it never finishes without the backend
-            if (prev < 95) return prev + 0.1;
+            // Otherwise, keep the UI 'alive' with a smooth incremental creep (0.3% every 250ms)
+            // Cap at 98% to ensure it only completes on a real 'done' status
+            if (prev < 98) return prev + 0.3;
             return prev;
           });
           
@@ -351,6 +351,7 @@ export default function Home() {
                 progress={progress} 
                 step={step} 
                 startTime={jobStartTime}
+                onUpgrade={() => setShowPaywall(true)}
               />
             </div>
           )}
