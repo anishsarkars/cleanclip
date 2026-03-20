@@ -37,34 +37,25 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
 
       {/* Subtle Animated Cloud Layers (Bottom Only) */}
       <div className="absolute inset-x-0 bottom-0 h-[400px] pointer-events-none z-0">
-         {/* Multiple layers of blurred drifts */}
-         <div className="absolute bottom-0 left-[-20%] right-[-20%] h-[300px] bg-white blur-[120px] rounded-full opacity-60 animate-cloud-drift" />
-         <div className="absolute bottom-0 left-[-10%] right-[-10%] h-[240px] bg-white blur-[100px] rounded-full opacity-40 animate-cloud-float delay-1000" />
-         <div className="absolute bottom-[-100px] left-0 right-0 h-[400px] bg-white blur-[140px] rounded-full opacity-80" />
+        {/* Multiple layers of blurred drifts */}
+        <div className="absolute bottom-0 left-[-20%] right-[-20%] h-[300px] bg-white blur-[120px] rounded-full opacity-60 animate-cloud-drift" />
+        <div className="absolute bottom-0 left-[-10%] right-[-10%] h-[240px] bg-white blur-[100px] rounded-full opacity-40 animate-cloud-float delay-1000" />
+        <div className="absolute bottom-[-100px] left-0 right-0 h-[400px] bg-white blur-[140px] rounded-full opacity-80" />
       </div>
 
       {/* Fluffy transition vignette */}
       <div className="absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-white via-white/40 to-transparent pointer-events-none z-10" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center">
-        
+
         <h1 className="mb-6 text-white text-5xl md:text-[88px] font-black tracking-[-0.05em] leading-[0.9] animate-fade-in shadow-text">
-           Remove video background<br className="hidden md:block" /> instantly in seconds.
+          Remove video background<br className="hidden md:block" />in seconds.
         </h1>
 
         <p className="mb-14 max-w-[620px] text-lg font-bold text-white/50 md:text-[22px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
-           Instant background removal and asset cleaning, offering a flawless creative pipeline from space to sky.
+          Instant background removal and asset cleaning, offering a flawless creative pipeline from space to sky.
         </p>
 
-        {/* Call to Action */}
-        <div className="flex flex-col items-center gap-12 mb-20 pointer-events-auto">
-           <button 
-              onClick={() => inputRef.current?.click()}
-              className="rounded-full bg-white px-10 py-4 text-zinc-950 font-black text-lg flex items-center gap-4 shadow-[0_24px_80px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 transition-all animate-fade-in delay-200 border border-black/5"
-           >
-              Start for free <ArrowRight className="w-5 h-5 text-zinc-400" strokeWidth={3} />
-           </button>
-        </div>
 
         {/* The Defined Black-Border Upload Card */}
         <div className="w-full max-w-[780px] animate-fade-in delay-300">
@@ -81,24 +72,23 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               if (file) handleFile(file);
             }}
             onClick={() => inputRef.current?.click()}
-            className={`group md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[100px] rounded-[64px] border-[1.5px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.3),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-16 px-8 ${
-              isDragging
-                ? "border-black bg-white/20"
-                : "border-black/5 hover:border-black/20 hover:bg-white/10"
-            }`}
+            className={`group md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[100px] rounded-[64px] border-[1.5px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.3),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-16 px-8 ${isDragging
+              ? "border-black bg-white/20"
+              : "border-black/5 hover:border-black/20 hover:bg-white/10"
+              }`}
           >
             <div className="mb-12 flex h-24 w-24 items-center justify-center bg-white/5 rounded-[40px] border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
-               <Upload className="w-12 h-12 text-white" strokeWidth={1} />
+              <Upload className="w-12 h-12 text-white" strokeWidth={1} />
             </div>
 
             <h2 className="mb-3 text-[38px] font-black tracking-tighter text-white shadow-text">
-               Drag & Drop to upload
+              Drag & Drop to upload
             </h2>
             <p className="text-white font-bold text-xl shadow-subtext opacity-50">
-               or <span className="underline decoration-white/40 underline-offset-8 hover:opacity-100 transition-all">browse files</span>
+              or <span className="underline decoration-white/40 underline-offset-8 hover:opacity-100 transition-all">browse files</span>
             </p>
             <p className="mt-14 text-white/20 text-[12px] font-black uppercase tracking-[0.3em] shadow-subtext">
-               MP4, MOV, GIF (MAX. 20MB)
+              MP4, MOV, GIF (MAX. 20MB)
             </p>
 
             <input
@@ -118,10 +108,10 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               {error}
             </div>
           )}
-          
+
           {helperText && !error && (
             <div className="animate-fade-in mt-16 text-sm font-black text-white uppercase tracking-[0.3em] shadow-subtext opacity-30">
-               {helperText}
+              {helperText}
             </div>
           )}
         </div>
