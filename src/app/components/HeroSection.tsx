@@ -32,20 +32,26 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
 
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-60 pt-48">
-      {/* 🌌 Minimalistic Cinematic Space-to-Blue Gradient */}
+      {/* 🌌 Cinematic Deep Space to Blue Gradient */}
       <div className="absolute inset-0 bg-[#020617] -z-30" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1E293B]/50 to-[#2563EB]/40 -z-20" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1E293B]/60 to-[#2563EB]/40 -z-20" />
       
-      {/* ☁️ High Quality Animated Soft Clouds (Bottom Base) */}
-      <div className="absolute inset-x-0 bottom-0 h-[500px] pointer-events-none z-0">
-          {/* Super-blurred high-definition sphere layers */}
-          <div className="absolute bottom-[-150px] left-[-25%] right-[-25%] h-[400px] bg-white blur-[140px] rounded-full opacity-70 animate-cloud-drift" />
-          <div className="absolute bottom-[-100px] left-[-15%] right-[-15%] h-[320px] bg-white blur-[120px] rounded-full opacity-50 animate-cloud-float-slow" />
-          <div className="absolute bottom-[-200px] left-[-10%] right-[-10%] h-[500px] bg-white blur-[160px] rounded-full opacity-90" />
+      {/* ☁️ High Quality Photographic Cloud Transition Layer */}
+      <div className="absolute inset-x-0 bottom-0 h-[600px] pointer-events-none z-0">
+          <div 
+             className="absolute bottom-0 left-[-20%] right-[-20%] h-full bg-cover bg-bottom animate-cloud-float-slow opacity-90 transition-all duration-[30s]"
+             style={{ 
+               backgroundImage: `url('/bg-clouds-photo.png')`,
+               maskImage: 'linear-gradient(to top, black 20%, transparent 100%)',
+               WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent 100%)'
+             }}
+          />
+          {/* Ambient blur to soften the photographic edges */}
+          <div className="absolute bottom-[-100px] left-[-10%] right-[-10%] h-[400px] bg-white blur-[120px] rounded-full opacity-40 mix-blend-screen" />
       </div>
 
-      {/* 🌫️ Fluffy white transition vignette */}
-      <div className="absolute inset-x-0 bottom-0 h-[280px] bg-gradient-to-t from-white via-white/40 to-transparent pointer-events-none z-10" />
+      {/* 🌫️ Deep fluffy transition vignette to white */}
+      <div className="absolute inset-x-0 bottom-0 h-[320px] bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center">
         
@@ -53,11 +59,11 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
            Remove video background<br className="hidden md:block" /> instantly in seconds.
         </h1>
 
-        <p className="mb-14 max-w-[620px] text-lg font-bold text-white/40 md:text-[22px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
+        <p className="mb-14 max-w-[620px] text-lg font-bold text-white/50 md:text-[22px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
            Instant background removal and asset cleaning, offering a flawless creative pipeline from space to sky.
         </p>
 
-        {/* The Precise Black-Border Upload Card */}
+        {/* The Defined Black-Border Upload Card */}
         <div className="w-full max-w-[780px] animate-fade-in delay-200">
           <div
             onDragOver={(e) => {
@@ -72,7 +78,7 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               if (file) handleFile(file);
             }}
             onClick={() => inputRef.current?.click()}
-            className={`group md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[64px] border-[1px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.35),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-16 px-8 ${
+            className={`group md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[64px] border-[1.5px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-16 px-8 ${
               isDragging
                 ? "border-white bg-white/20"
                 : "border-black/5 hover:border-black/20 hover:bg-white/10"
@@ -119,18 +125,12 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
       </div>
 
       <style jsx>{`
-        @keyframes cloud-drift {
-          0% { transform: translateX(0) scale(1.1); }
-          50% { transform: translateX(5%) scale(1.15); }
-          100% { transform: translateX(0) scale(1.1); }
-        }
         @keyframes cloud-float-slow {
           0% { transform: translateY(0); }
           50% { transform: translateY(-40px); }
           100% { transform: translateY(0); }
         }
-        .animate-cloud-drift { animation: cloud-drift 25s ease-in-out infinite; }
-        .animate-cloud-float-slow { animation: cloud-float-slow 15s ease-in-out infinite; }
+        .animate-cloud-float-slow { animation: cloud-float-slow 20s ease-in-out infinite; }
       `}</style>
     </section>
   );
