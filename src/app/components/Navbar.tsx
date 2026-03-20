@@ -8,12 +8,12 @@ export default function Navbar() {
     <div className="w-full flex justify-center sticky top-10 shrink-0">
       <nav className="glass-pill h-20 px-8 flex items-center justify-between w-full max-w-4xl transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
         
-        {/* Left: Logo */}
+        {/* Left: Logo (Neural Squircle style from reference) */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="h-10 w-10 rounded-full bg-zinc-950 flex items-center justify-center transition-all group-hover:scale-110 group-hover:rotate-6">
-             <div className="h-4 w-4 rounded-full border-2 border-white/80" />
+          <div className="h-12 w-12 rounded-[16px] bg-zinc-950 flex items-center justify-center shadow-xl transition-all group-hover:scale-105">
+             <div className="h-6 w-6 rounded-full border-[3px] border-blue-400 bg-blue-500/20 animate-pulse" />
           </div>
-          <span className="text-xl font-black tracking-[-0.06em] text-zinc-950 uppercase italic">CleanClip</span>
+          <span className="text-2xl font-black tracking-[-0.08em] text-zinc-950 uppercase">CleanClip</span>
         </Link>
 
         {/* Center: Social/Links */}

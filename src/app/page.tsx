@@ -287,7 +287,8 @@ export default function Home() {
              originalUrl={originalUrl} 
              processedUrl={processedUrl} 
              fileName={selectedFile?.name || "clip.mp4"} 
-             onReset={handleReset} 
+             onReset={handleReset}
+             onDownload={handleDownload}
            />
         )}
 
