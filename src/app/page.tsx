@@ -111,11 +111,14 @@ export default function Home() {
       stopPolling();
       pollRef.current = setInterval(async () => {
         try {
-          const response = await fetch(`${API}/status/${jobId}`);
+          // Use a cache-buster timestamp for reliable updates
+          const response = await fetch(`${API}/status/${jobId}?t=${Date.now()}`);
           const data = await response.json();
           if (!response.ok) throw new Error(data.detail || "Unable to fetch status.");
 
-          setProgress(data.progress ?? 0);
+          // Only update if progress is ahead of current (prevent jumps from stale data)
+          const newProgress = data.progress ?? 0;
+          setProgress((prev) => (newProgress > prev ? newProgress : prev));
           setStep(data.step ?? "Processing");
           if (data.preview_frame) setPreviewUrl(data.preview_frame);
 

@@ -427,12 +427,15 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                     if rembg_session is None:
                         with session_lock:
                             if rembg_session is None:
-                                print("Initializing rembg session (u2net) for current thread...")
+                                print("Initializing AI models for first run...")
+                                # Update UI so they know WHY it might be stuck
+                                jobs[job_id]["step"] = "Initializing AI models (first use)..."
                                 try:
                                     rembg_session = new_session("u2net")
                                 except Exception as e:
                                     print(f"Failed to load u2net, trying isnet-general-use: {e}")
                                     rembg_session = new_session("isnet-general-use")
+                                print("AI model loaded.")
 
                     # Use post_process_mask=True for much cleaner edges (less background bleed)
                     processed_pil = remove(pil_img, session=rembg_session, post_process_mask=True).convert("RGBA")
@@ -630,8 +633,8 @@ async def process_video(
         "user_id": str(clerk_user_id) if clerk_user_id else None,
         "filename": filename,
         "status": "queued",
-        "progress": 0,
-        "step": "Queued",
+        "progress": 30, # Start at 30% to match upload completion
+        "step": "Analyzing video...",
         "result_url": None,
         "error": None,
         "created_at": now_iso(),
