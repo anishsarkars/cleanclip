@@ -316,6 +316,10 @@ def increment_guest_usage(key: str) -> None:
         )
 
 
+    await file.close()
+    return size
+
+
 async def _save_upload(file: UploadFile, destination: Path) -> int:
     size = 0
     with destination.open("wb") as output:
@@ -334,7 +338,14 @@ async def _save_upload(file: UploadFile, destination: Path) -> int:
 
 
 def persist_job(job_id: str) -> None:
-    job = jobs[job_id]
+    job = jobs.get(job_id)
+    if not job:
+        # Fallback to DB fetch if not in memory (for recovery or other workers)
+        with db() as connection:
+            row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+            if not row: return
+            job = dict(row)
+            
     with db() as connection:
         connection.execute(
             """
@@ -430,17 +441,17 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                     if rembg_session is None:
                         with session_lock:
                             if rembg_session is None:
-                                print("Initializing AI models for first run...")
-                                # Update UI so they know WHY it might be stuck
-                                jobs[job_id]["step"] = "Initializing AI models (first use)..."
+                                print("Initializing High-Precision AI models...")
+                                jobs[job_id]["step"] = "Loading Neural Engine (first use)..."
                                 try:
-                                    rembg_session = new_session("u2net")
-                                except Exception as e:
-                                    print(f"Failed to load u2net, trying isnet-general-use: {e}")
+                                    # isnet-general-use is THE pro choice for background removal
                                     rembg_session = new_session("isnet-general-use")
-                                print("AI model loaded.")
+                                except Exception as e:
+                                    print(f"Failed to load ISNet, trying u2net: {e}")
+                                    rembg_session = new_session("u2net")
+                                print("Neural Engine Ready.")
 
-                    # Use post_process_mask=True for much cleaner edges (less background bleed)
+                    # Pro settings: post_process_mask=True and improved alpha
                     processed_pil = remove(pil_img, session=rembg_session, post_process_mask=True).convert("RGBA")
                     
                     # Debug log for first frame to verify removal
@@ -559,8 +570,27 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
 
 
 @app.on_event("startup")
-async def startup() -> None:
+async def startup_event():
     init_db()
+    # Resume any jobs that were interrupted by a server restart
+    with db() as connection:
+        interrupted = connection.execute(
+            "SELECT * FROM jobs WHERE status IN ('queued', 'processing')"
+        ).fetchall()
+        for row in interrupted:
+            job = dict(row)
+            job_id = job["id"]
+            input_path = UPLOADS_DIR / f"{job_id}{Path(job['filename']).suffix}"
+            if input_path.exists():
+                print(f"Recovering interrupted job: {job_id}")
+                jobs[job_id] = job
+                asyncio.create_task(_process_job(job_id, input_path, job.get("user_id"), None))
+            else:
+                # Mark as error if file is gone
+                connection.execute(
+                    "UPDATE jobs SET status = 'error', error = 'Server restart, file lost' WHERE id = ?",
+                    (job_id,)
+                )
     print("Database initialized.")
     # We load the session lazily on the first request to avoid blocking server start
 
