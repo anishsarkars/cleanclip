@@ -88,6 +88,9 @@ def month_key(timestamp: str | None = None) -> str:
 
 def db() -> sqlite3.Connection:
     connection = sqlite3.connect(DB_PATH, check_same_thread=False)
+    # Use WAL mode for better concurrency (readers don't block writers and vice-versa)
+    connection.execute("PRAGMA journal_mode=WAL")
+    connection.execute("PRAGMA synchronous=NORMAL")
     connection.row_factory = sqlite3.Row
     return connection
 
@@ -481,8 +484,8 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                     "step": f"Removing background {frame_idx}/{total_frames or '?'} ({remaining} remaining)"
                 })
                 
-                # Persist to DB less frequently to save IO
-                if frame_idx % 20 == 0:
+                # Persist to DB less frequently to save IO and avoid locks
+                if frame_idx % 50 == 0:
                     persist_job(job_id)
             
             cap.release()
@@ -651,10 +654,18 @@ async def process_video(
 
 @app.get("/status/{job_id}")
 def get_status(job_id: str) -> dict[str, Any]:
+    # 1. Try memory (current active jobs)
     job = jobs.get(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found.")
-    return job
+    if job:
+        return job
+        
+    # 2. Try Database (jobs from other processes or after restart)
+    with db() as connection:
+        row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+        if row:
+            return dict(row)
+            
+    raise HTTPException(status_code=404, detail="Job not found.")
 
 
 @app.get("/result/{job_id}")

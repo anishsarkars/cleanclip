@@ -178,7 +178,12 @@ export default function Home() {
             // Map 0-100% upload to 0-30% on the progress bar
             const percent = Math.round((event.loaded / event.total) * 30);
             setProgress(percent);
-            setStep(`Uploading (${Math.round((event.loaded / event.total) * 100)}%)`);
+            const uploadPercent = Math.round((event.loaded / event.total) * 100);
+            if (uploadPercent < 100) {
+              setStep(`Uploading (${uploadPercent}%)`);
+            } else {
+              setStep("Finalizing upload...");
+            }
           }
         };
 
