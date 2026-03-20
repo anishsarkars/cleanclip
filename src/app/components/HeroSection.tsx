@@ -72,7 +72,7 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
       {/* 🌫️ Constant High-Quality Overflow Transition to White */}
       <div className="absolute inset-x-0 bottom-0 h-[450px] bg-gradient-to-t from-white via-white/100 to-transparent pointer-events-none z-10" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center translate-y-[-60px]">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center translate-y-[-110px]">
 
         <h1
           className="mb-8 text-white text-1xl md:text-8xl lg:text-7xl font-medium tracking-[-0.03em] leading-tight animate-fade-in shadow-text"
