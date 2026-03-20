@@ -66,36 +66,32 @@
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-15px); }
+  50% { transform: translateY(-10px); }
 }
 
-@keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+@keyframes fadeInClouds {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-float {
-  animation: float 6s ease-in-out infinite;
+  animation: float 5s ease-in-out infinite;
 }
 
-.animate-spin-slow {
-  animation: spin-slow 20s linear infinite;
+.animate-clouds {
+  animation: fadeInClouds 1.5s ease-out forwards;
 }
 
-.glass-premium {
-  @apply bg-white/10 backdrop-blur-2xl border border-white/20 shadow-[0_32px_120px_rgba(0,0,0,0.12)];
+.glass-aero {
+  @apply bg-white/10 backdrop-blur-[40px] border border-white/40 shadow-[0_40px_100px_rgba(0,0,0,0.05)];
 }
 
-.glass-card {
-  @apply bg-white/20 backdrop-blur-3xl border border-white/30 shadow-[0_20px_80px_rgba(0,0,0,0.08)];
+.bg-sky {
+  background: linear-gradient(180deg, #7BAACF 0%, #A5C9E1 60%, #FFFFFF 100%);
 }
 
-.bg-radial-gradient {
-  background: radial-gradient(circle at 50% 50%, #60A5FA 0%, #3B82F6 40%, #1D4ED8 100%);
-}
-
-.shadow-text {
-  text-shadow: 0 4px 12px rgba(0,0,0,0.1);
+.outer-shell {
+  @apply border-[1px] border-white/40 rounded-[40px] m-4 md:m-8 overflow-hidden relative;
 }
 
 /* Delay classes */

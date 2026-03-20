@@ -303,42 +303,40 @@ export default function Home() {
   const showOnboarding = Boolean(user && userInfo?.plan === "none");
 
   return (
-    <main className="min-h-screen bg-[#FDFBF7] selection:bg-blue-100/50">
-      <Navbar />
+    <main className="min-h-screen bg-sky p-4 md:p-8">
+      {/* Outer Card Wrap (Reference Style) */}
+      <div className="relative min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-8rem)] bg-white/5 border-[1px] border-white/40 rounded-[48px] overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.05)] backdrop-blur-[2px]">
+        
+        <Navbar />
 
-      {showOnboarding && (
-        <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
-      )}
+        {showOnboarding && (
+          <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
+        )}
 
-      {showPaywall && (
-        <PaywallModal
-          onChoosePlan={handlePlanSelection}
-          onClose={() => setShowPaywall(false)}
-          loadingPlan={loadingPlan}
-        />
-      )}
+        {showPaywall && (
+          <PaywallModal
+            onChoosePlan={handlePlanSelection}
+            onClose={() => setShowPaywall(false)}
+            loadingPlan={loadingPlan}
+          />
+        )}
 
-      {appState === "idle" && (
-        <>
-          <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
-          <HowItWorks />
-          <PricingSection onUpgrade={handlePlanSelection} />
-          <Footer />
-        </>
-      )}
+        {appState === "idle" && (
+          <div className="animate-fade-in">
+            <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
+          </div>
+        )}
 
-      {appState === "processing" && selectedFile && (
-        <ProcessingScreen 
-          fileName={selectedFile.name} 
-          progress={progress} 
-          step={step} 
-          previewUrl={previewUrl} 
-          startTime={jobStartTime}
-        />
-      )}
+        {appState === "processing" && selectedFile && (
+          <ProcessingScreen 
+            fileName={selectedFile.name} 
+            progress={progress} 
+            step={step} 
+            startTime={jobStartTime}
+          />
+        )}
 
-      {appState === "result" && selectedFile && processedUrl && (
-        <>
+        {appState === "result" && selectedFile && processedUrl && (
           <ResultSection
             originalUrl={originalUrl}
             processedUrl={processedUrl}
@@ -346,25 +344,30 @@ export default function Home() {
             onReset={handleReset}
             onDownload={handleDownload}
           />
-          <Footer />
-        </>
-      )}
+        )}
 
-      {appState === "error" && (
-        <section className="flex min-h-screen items-center justify-center bg-[#fafafa] px-6 py-24">
-          <div className="w-full max-w-md rounded-[32px] border border-black/6 bg-white p-10 text-center shadow-[0_20px_60px_rgba(0,0,0,0.05)]">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Error</p>
-            <h2 className="mb-4 text-3xl font-semibold tracking-[-0.04em] text-zinc-950">Something went wrong</h2>
-            <p className="mb-8 text-sm leading-7 text-zinc-500">{errorMsg}</p>
-            <button
-              onClick={handleReset}
-              className="cursor-pointer rounded-full bg-zinc-950 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-black"
-            >
-              Try again
-            </button>
-          </div>
-        </section>
-      )}
+        {appState === "error" && (
+          <section className="flex min-h-[60vh] items-center justify-center px-6">
+            <div className="w-full max-w-xl glass-aero rounded-[48px] p-12 text-center text-white">
+              <h2 className="text-4xl font-bold mb-4 tracking-tight">Something went wrong</h2>
+              <div className="bg-white/10 p-6 rounded-3xl mb-10 text-left border border-white/20">
+                 <p className="font-mono text-sm leading-7 break-words opacity-80">{errorMsg}</p>
+              </div>
+              <button 
+                onClick={handleReset}
+                className="w-full h-14 rounded-full bg-white text-zinc-950 font-bold hover:scale-105 active:scale-95 transition-all"
+              >
+                Go back to home
+              </button>
+            </div>
+          </section>
+        )}
+        
+        <div className="mt-auto px-12 py-10 flex justify-between items-center text-white/40 font-bold text-[10px] uppercase tracking-[0.4em]">
+           <span>Neural Pipeline 4.0</span>
+           <span>CleanClip AI</span>
+        </div>
+      </div>
     </main>
   );
 }
