@@ -303,8 +303,18 @@ export default function Home() {
   const showOnboarding = Boolean(user && userInfo?.plan === "none");
 
   return (
-    <main className="min-h-screen bg-white">
-      <Navbar />
+    <main className="min-h-screen bg-[var(--color-beige-soft)] p-4 md:p-8 lg:p-12 relative overflow-hidden">
+      {/* Background Sparkles */}
+      <div className="absolute top-[10%] left-[15%] opacity-20 animate-pulse">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 0L13.5 10.5L24 12L13.5 13.5L12 24L10.5 13.5L0 12L10.5 10.5L12 0Z" fill="#EAB308" />
+        </svg>
+      </div>
+      <div className="absolute bottom-[20%] right-[10%] opacity-15 animate-bounce-subtle">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 0L13.5 10.5L24 12L13.5 13.5L12 24L10.5 13.5L0 12L10.5 10.5L12 0Z" fill="#EAB308" />
+        </svg>
+      </div>
 
       {showOnboarding && (
         <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
@@ -319,12 +329,61 @@ export default function Home() {
       )}
 
       {appState === "idle" && (
-        <>
-          <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
-          <HowItWorks />
-          <PricingSection onUpgrade={handlePlanSelection} />
-          <Footer />
-        </>
+        <div className="mx-auto w-full max-w-[1440px] landing-card min-h-[90vh] flex flex-col relative">
+          <Navbar />
+          
+          <div className="flex-1 px-8 md:px-16 pt-12 pb-24 text-center">
+            {/* Playful elements around hero */}
+            <div className="relative inline-block mb-6">
+                <span className="absolute -top-6 -right-12 text-black font-handwriting rotate-12 text-[14px]">
+                   NEW! <br /> <span className="text-[20px]">↘</span>
+                </span>
+                <span className="inline-block px-4 py-2 border border-black/10 rounded-full text-[12px] font-bold uppercase tracking-widest text-zinc-400 mb-6 bg-zinc-50/50">
+                   The trend that you never see again
+                </span>
+            </div>
+
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-heading font-semibold tracking-[-0.05em] text-zinc-950 mb-12 max-w-4xl mx-auto leading-[1.05]">
+               Spread Your Charming With <span className="relative">Your AI <span className="absolute -top-8 -right-8 opacity-40">✨</span></span>
+            </h1>
+
+            <div className="w-full max-w-2xl mx-auto mt-8">
+              <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
+            </div>
+
+            {/* Floating details */}
+            <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-12 text-left max-w-5xl mx-auto items-end">
+               <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                     <span className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 text-black font-bold text-xs ring-4 ring-yellow-400/10">1</span>
+                     <p className="text-sm font-bold uppercase tracking-widest text-zinc-950">Always Be Updated</p>
+                  </div>
+                  <div className="h-[2px] w-full bg-zinc-100 rounded-full overflow-hidden">
+                     <div className="h-full w-1/3 bg-zinc-950" />
+                  </div>
+               </div>
+
+               <div className="flex justify-center">
+                   <div className="flex items-center gap-3 px-6 py-3 border border-black/5 rounded-full bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                      <span className="text-[18px]">🖱️</span>
+                      <p className="text-[12px] font-bold uppercase tracking-wider text-zinc-500">Scroll for more</p>
+                   </div>
+               </div>
+
+               <div className="space-y-4">
+                  <p className="text-xs font-medium text-zinc-400 leading-relaxed italic">
+                    "Elevate your visual storytelling with AI-driven precision that speaks to your unique fashion sense."
+                  </p>
+                  <div className="flex items-center gap-3">
+                     <div className="h-8 w-8 rounded-full bg-zinc-900 border-2 border-white overflow-hidden shadow-sm">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" />
+                     </div>
+                     <p className="text-[12px] font-bold text-zinc-900">Anish Sarkar</p>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {appState === "processing" && selectedFile && (
@@ -337,17 +396,15 @@ export default function Home() {
         />
       )}
 
-      {appState === "result" && selectedFile && processedUrl && (
-        <>
-          <ResultSection
-            originalUrl={originalUrl}
-            processedUrl={processedUrl}
-            fileName={selectedFile.name}
-            onReset={handleReset}
-            onDownload={handleDownload}
-          />
-          <Footer />
-        </>
+      {appState === "result" && (
+         <div className="mx-auto w-full max-w-[1440px] landing-card min-h-[90vh] flex flex-col p-8 bg-[var(--color-beige-sparkle)]">
+            <ResultSection 
+              originalUrl={originalUrl} 
+              processedUrl={processedUrl} 
+              onReset={handleReset} 
+              onDownload={handleDownload}
+            />
+         </div>
       )}
 
       {appState === "error" && (

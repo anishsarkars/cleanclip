@@ -16,7 +16,7 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
 
   const validate = (file: File) => {
     if (!ACCEPTED.includes(file.type)) return "Use MP4, MOV, GIF, or WebM.";
-    if (file.size > 100 * 1024 * 1024) return "Maximum file size is 100MB.";
+    if (file.size > 20 * 1024 * 1024) return "Maximum file size is 20MB.";
     return null;
   };
 
@@ -30,39 +30,14 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
   );
 
   return (
-    <section
-      id="upload"
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#fafafa_0%,#f4f4f5_100%)] px-6 pb-20 pt-32"
-    >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(720px 240px at 50% 78%, rgba(0,0,0,0.045), transparent 70%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 z-0 w-full -translate-x-1/2 -translate-y-[58%] text-center text-[88px] font-[900] leading-none tracking-[-0.08em] text-black/[0.05] sm:text-[144px] md:text-[220px] lg:text-[320px]"
-      >
-        REMOVE
-      </div>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[220px] w-[220px] -translate-x-1/2 translate-y-10 rounded-full bg-black/[0.04] blur-[90px]"
-      />
+    <div className="w-full max-w-[620px] mx-auto">
+      <div className="relative group">
+        {/* Decorative corner sparkles */}
+        <div className="absolute -top-4 -left-4 h-8 w-8 text-yellow-500 rotate-[-15deg] opacity-40">
+           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0L13.5 10.5L24 12L13.5 13.5L12 24L10.5 13.5L0 12L10.5 10.5L12 0Z" /></svg>
+        </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[760px] flex-col items-center text-center">
-        <h1 className="mb-4 max-w-[680px] text-[34px] font-semibold tracking-[-0.05em] text-zinc-950 md:text-[48px]">
-          Remove video background in seconds
-        </h1>
-
-        {helperText && (
-          <p className="mb-6 text-sm font-medium text-zinc-500">{helperText}</p>
-        )}
-
-        <div className="w-full max-w-[540px] rounded-[28px] border border-black/8 bg-white/95 p-4 shadow-[0_20px_60px_rgba(0,0,0,0.06)] backdrop-blur-sm">
+        <div className="w-full rounded-[40px] border border-black/5 bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.03)] backdrop-blur-md">
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -75,52 +50,44 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               const file = e.dataTransfer.files[0];
               if (file) handleFile(file);
             }}
-            className={`flex min-h-[400px] flex-col items-center justify-center rounded-[22px] border px-8 py-10 text-center transition-all duration-200 md:px-12 md:py-14 ${
+            className={`flex min-h-[360px] flex-col items-center justify-center rounded-[32px] border transition-all duration-300 ${
               isDragging
-                ? "border-black/20 bg-zinc-50"
-                : "border-dashed border-black/12 bg-white"
+                ? "border-black/20 bg-zinc-50 scale-[0.995]"
+                : "border-zinc-100 bg-[#fffdf2]/50"
             }`}
           >
-            <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-black/8 bg-zinc-50">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                className="text-zinc-900"
-              >
-                <path d="M12 16V7" strokeLinecap="round" />
-                <path d="M8.5 10.5 12 7l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
-                <rect x="4" y="4" width="16" height="16" rx="4" />
-              </svg>
+            <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-[24px] bg-white shadow-sm ring-1 ring-black/[0.03]">
+               <div className="relative">
+                  <div className="absolute inset-0 bg-yellow-400/20 blur-xl rounded-full" />
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="text-zinc-950 relative"
+                  >
+                    <path d="M12 16V7" strokeLinecap="round" />
+                    <path d="M8.5 10.5 12 7l3.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+               </div>
             </div>
 
-            <h2 className="m-0 mb-3 text-[32px] font-black leading-[0.98] tracking-[-0.05em] text-zinc-950 md:text-[42px]">
-              Drag & drop
-              <br />
-              <span className="text-zinc-400">videos or GIFs</span>
-            </h2>
-
-            <p className="mb-8 max-w-[320px] text-[15px] font-medium leading-6 text-zinc-500">
-              or{" "}
-              <button
-                onClick={() => inputRef.current?.click()}
-                suppressHydrationWarning
-                className="cursor-pointer font-semibold text-zinc-950 underline decoration-black/15 underline-offset-4 hover:decoration-black"
-              >
-                browse files
-              </button>{" "}
-              on your device
-            </p>
+            <div className="space-y-2 mb-8 px-6 text-center">
+               <h2 className="text-[28px] font-bold tracking-tight text-zinc-950">
+                  Drop your video here
+               </h2>
+               <p className="text-[14px] font-medium text-zinc-400 max-w-[280px] mx-auto leading-relaxed">
+                  Fastest background removal for MP4, MOV, GIF & WebM up to 20MB.
+               </p>
+            </div>
 
             <button
               onClick={() => inputRef.current?.click()}
-              suppressHydrationWarning
-              className="cursor-pointer rounded-full bg-zinc-950 px-7 py-3.5 text-[14px] font-semibold text-white transition-all hover:bg-black active:scale-[0.98]"
+              className="cursor-pointer rounded-full bg-zinc-950 px-10 py-4 text-[13px] font-bold uppercase tracking-[0.15em] text-white shadow-xl shadow-black/10 transition-all hover:bg-black hover:shadow-black/20 active:scale-[0.98]"
             >
-              Upload Video
+              Select Material
             </button>
 
             <input
@@ -135,13 +102,17 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
             />
           </div>
 
-          {error && (
-            <div className="animate-fade-in mt-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-center text-sm font-semibold text-red-600">
+          {error ? (
+            <div className="animate-fade-in mt-4 rounded-2xl border border-red-50 bg-red-50/50 px-4 py-3 text-center text-[13px] font-bold text-red-500">
               {error}
             </div>
-          )}
+          ) : helperText ? (
+             <div className="mt-4 text-[11px] font-bold uppercase tracking-[0.2em] text-zinc-300 text-center">
+                {helperText}
+             </div>
+          ) : null}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
