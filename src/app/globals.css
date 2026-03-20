@@ -15,7 +15,8 @@
   }
 
   body {
-    @apply m-0 p-4 md:p-10 font-sans bg-[#F9F5EF] text-gray-950 antialiased overflow-x-hidden;
+    @apply m-0 p-0 font-sans bg-[#81CCFC] text-white antialiased overflow-x-hidden;
+    background: radial-gradient(circle at center, #81CCFC 0%, #3DA1F5 100%);
   }
 }
 
@@ -105,21 +106,39 @@
   animation: float 5s ease-in-out infinite;
 }
 
-/* Premium Card Layout */
-.main-card {
-  @apply bg-white rounded-[48px] shadow-[0_32px_80px_rgba(0,0,0,0.06)] border border-white/50 backdrop-blur-3xl;
+/* Framer Glass Style */
+.glass-panel {
+  @apply bg-white/10 backdrop-blur-2xl border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.05)];
 }
 
-/* Upload soft gradient anim */
-@keyframes mesh {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.glass-pill {
+  @apply rounded-full bg-white/80 backdrop-blur-xl border border-white shadow-[0_4px_24px_rgba(0,0,0,0.04)];
 }
 
-.animate-mesh {
-  background-size: 200% 200%;
-  animation: mesh 8s ease infinite;
+/* Background Rings */
+.bg-ring {
+  @apply absolute rounded-full border border-white/10 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none;
+}
+
+@keyframes ring-pulse {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.1; }
+  50% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.05; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0.1; }
+}
+
+.animate-ring {
+  animation: ring-pulse 6s ease-in-out infinite;
+}
+
+/* 3D Float icon */
+@keyframes float-3d {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(10px, -15px) rotate(5deg); }
+  75% { transform: translate(-10px, 15px) rotate(-5deg); }
+}
+
+.animate-float-3d {
+  animation: float-3d 8s ease-in-out infinite;
 }
 
 /* Custom Scrollbar */
