@@ -116,9 +116,16 @@ export default function Home() {
           const data = await response.json();
           if (!response.ok) throw new Error(data.detail || "Unable to fetch status.");
 
-          // Only update if progress is ahead of current (prevent jumps from stale data)
           const newProgress = data.progress ?? 0;
-          setProgress((prev) => (newProgress > prev ? newProgress : prev));
+          setProgress((prev) => {
+            // If backend progress is actually ahead, jump to it
+            if (newProgress > prev) return newProgress;
+            // Otherwise, drift slowly forward (0.1% every 250ms) to show "life"
+            // Cap drift at 95% so it never finishes without the backend
+            if (prev < 95) return prev + 0.1;
+            return prev;
+          });
+          
           setStep(data.step ?? "Processing");
           if (data.preview_frame) setPreviewUrl(data.preview_frame);
 
