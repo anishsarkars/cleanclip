@@ -613,6 +613,20 @@ def health() -> dict[str, Any]:
     }
 
 
+@app.post("/users/onboard")
+def mark_onboarded(data: dict[str, Any]):
+    clerk_user_id = data.get("clerk_user_id")
+    if not clerk_user_id:
+        raise HTTPException(status_code=400, detail="Missing user id.")
+    
+    with db() as connection:
+        connection.execute(
+            "UPDATE users SET has_onboarded = 1 WHERE clerk_user_id = ?",
+            (clerk_user_id,)
+        )
+    return {"status": "success"}
+
+
 @app.post("/users/sync")
 def sync_user(payload: SyncUserRequest) -> dict[str, Any]:
     user = ensure_user(payload.clerk_user_id, payload.email)
@@ -621,6 +635,7 @@ def sync_user(payload: SyncUserRequest) -> dict[str, Any]:
         "email": user["email"],
         "plan": user["plan"],
         "credits_remaining": user["credits_remaining"],
+        "has_onboarded": user["has_onboarded"],
         "last_reset_date": user["last_reset_date"],
     }
 
@@ -633,6 +648,7 @@ def select_plan(payload: SelectPlanRequest) -> dict[str, Any]:
         "email": user["email"],
         "plan": user["plan"],
         "credits_remaining": user["credits_remaining"],
+        "has_onboarded": user["has_onboarded"],
         "last_reset_date": user["last_reset_date"],
     }
 
@@ -789,11 +805,12 @@ async def dodo_webhook(request: Request) -> JSONResponse:
                 with db() as connection:
                     connection.execute(
                         """
-                        INSERT INTO users (clerk_user_id, email, plan, credits_remaining, last_reset_date, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO users (clerk_user_id, email, plan, credits_remaining, has_onboarded, last_reset_date, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, 1, ?, ?, ?)
                         ON CONFLICT(clerk_user_id) DO UPDATE SET
                             plan = excluded.plan,
                             credits_remaining = credits_remaining + excluded.credits_remaining,
+                            has_onboarded = 1,
                             updated_at = excluded.updated_at
                         """,
                         (clerk_user_id, email, plan, credits_to_add, now, now, now),

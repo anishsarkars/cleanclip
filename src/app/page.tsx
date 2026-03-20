@@ -282,6 +282,13 @@ export default function Home() {
         setShowPaywall(false);
 
         if (plan === "pro" || plan === "lifetime") {
+          // Force onboarding completion before redirecting
+          await fetch(`${API}/users/onboard`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clerk_user_id: user.id }),
+          });
+
           const productId = 
             plan === "pro" 
               ? "pdt_0NalSjZWHhamGs4oYJvTe" 
