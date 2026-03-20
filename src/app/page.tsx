@@ -39,6 +39,7 @@ export default function Home() {
   const [processedUrl, setProcessedUrl] = useState("");
   const [progress, setProgress] = useState(0);
   const [step, setStep] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [helperText, setHelperText] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -116,6 +117,7 @@ export default function Home() {
 
           setProgress(data.progress ?? 0);
           setStep(data.step ?? "Processing");
+          if (data.preview_frame) setPreviewUrl(data.preview_frame);
 
           if (data.status === "done") {
             stopPolling();
@@ -287,7 +289,12 @@ export default function Home() {
       )}
 
       {appState === "processing" && selectedFile && (
-        <ProcessingScreen fileName={selectedFile.name} progress={progress} step={step} />
+        <ProcessingScreen 
+          fileName={selectedFile.name} 
+          progress={progress} 
+          step={step} 
+          previewUrl={previewUrl} 
+        />
       )}
 
       {appState === "result" && selectedFile && processedUrl && (

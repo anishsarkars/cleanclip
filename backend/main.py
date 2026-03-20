@@ -50,6 +50,11 @@ app.add_middleware(
 jobs: dict[str, dict[str, Any]] = {}
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 rembg_session = None
+rembg_lock = asyncio.Lock() # For async-safety if used in async def
+rembg_mutex = concurrent.futures.ThreadPoolExecutor(max_workers=1) # Or just a threading.Lock
+import threading
+session_lock = threading.Lock()
+
 FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
 
 
@@ -350,7 +355,8 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
             "-c:v", "libvpx-vp9",
             "-pix_fmt", "yuva420p",
             "-auto-alt-ref", "0",
-            "-crf", "25",
+            "-crf", "35", # Faster/lighter CRF (was 25)
+            "-deadline", "realtime", # Very important for speed
             "-b:v", "0",
             "-metadata:s:v:0", "alpha_mode=1",
             str(temp_output),
@@ -375,14 +381,19 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                 ret, frame = cap.read()
                 if not ret:
                     if frame_idx == 0:
-                        raise RuntimeError("Failed to read any frames from the video.")
+                        raise RuntimeError("Failed to read any frames from the video. Check if the codec is supported.")
                     break
                 
                 # Convert OpenCV (BGR) to PIL (RGBA)
                 try:
                     # Periodically check if FFmpeg is still running
                     if process.poll() is not None:
-                        raise RuntimeError("FFmpeg process exited prematurely.")
+                         # Read log for error
+                        err_msg = "Unknown FFmpeg error"
+                        if log_path.exists():
+                            with open(log_path, "r", errors="ignore") as f:
+                                err_msg = f.read()[-500:] # Last 500 chars
+                        raise RuntimeError(f"FFmpeg process exited prematurely. Error: {err_msg}")
 
                     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     pil_img = Image.fromarray(frame_rgb).convert("RGBA")
@@ -391,8 +402,13 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                     # Ensure rembg_session is available (lazy load if needed)
                     global rembg_session
                     if rembg_session is None:
-                        print("Initializing rembg session lazily...")
-                        rembg_session = new_session("isnet-general-use")
+                        with session_lock:
+                            if rembg_session is None:
+                                print("Initializing rembg session (isnet-general-use) for current thread...")
+                                try:
+                                    rembg_session = new_session("isnet-general-use")
+                                except:
+                                    rembg_session = new_session("u2net")
 
                     processed_pil = remove(pil_img, session=rembg_session).convert("RGBA")
                     
@@ -400,6 +416,17 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                     if process.stdin:
                         process.stdin.write(processed_pil.tobytes())
                         process.stdin.flush()
+                        
+                    # Capture first frame or every 100th frame for preview
+                    if frame_idx == 0 or frame_idx % 100 == 0:
+                        import io, base64
+                        thumb_io = io.BytesIO()
+                        # Small thumbnail of processed frame
+                        thumb_img = processed_pil.resize((320, int(320 * meta.height / meta.width)))
+                        thumb_img.save(thumb_io, "WEBP", quality=70) # WebP for better compression
+                        thumb_b64 = base64.b64encode(thumb_io.getvalue()).decode()
+                        jobs[job_id]["preview_frame"] = f"data:image/webp;base64,{thumb_b64}"
+
                 except Exception as e:
                     print(f"Frame {frame_idx} processing error: {e}")
                     # If it's a critical error (like pipe broken), stop immediately
