@@ -283,11 +283,10 @@ export default function Home() {
           const productId = 
             plan === "pro" 
               ? "pdt_0NalSjZWHhamGs4oYJvTe" 
-              : "pdt_0NavT6EYIyVG412m2MHm7";
+              : "pdt_0NavKn2G5oln4JN2cMrzM";
           
-          const isTest = plan === "lifetime";
           const returnUrl = encodeURIComponent(`${window.location.origin}?success=true`);
-          const baseUrl = isTest ? "test.checkout.dodopayments.com" : "checkout.dodopayments.com";
+          const baseUrl = "checkout.dodopayments.com";
           
           let checkoutUrl = `https://${baseUrl}/buy/${productId}?client_reference_id=${user.id}&return_url=${returnUrl}`;
           
