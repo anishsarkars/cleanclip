@@ -23,25 +23,47 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <head>
-          {/* Silence MetaMask/Extension errors that appear in Next.js 16 dev overlay */}
+          {/* Hardened Silence for MetaMask/Noise Extension errors in Next.js 16 Overlay */}
           <script
             dangerouslySetInnerHTML={{
               __html: `
                 (function() {
+                  // Filter console errors
                   const originalError = console.error;
-                  console.error = function() {
-                    const msg = arguments[0];
-                    if (typeof msg === 'string' && (
-                        msg.includes('MetaMask') || 
-                        msg.includes('Failed to connect to MetaMask') ||
-                        msg.includes('nkbihfbeogaeaoehlefnkodbefgpgknn')
-                    )) {
+                  console.error = function(...args) {
+                    const msg = String(args[0] || "");
+                    if (msg.includes('MetaMask') || 
+                        msg.includes('Failed to connect') ||
+                        msg.includes('nkbihfbeogaeaoehlefnkodbefgpgknn')) {
                       return;
                     }
-                    originalError.apply(console, arguments);
+                    originalError.apply(console, args);
                   };
+
+                  // Filter global window errors
+                  window.onerror = function(message, source, lineno, colno, error) {
+                    const msg = String(message || "");
+                    const src = String(source || "");
+                    if (msg.includes('MetaMask') || src.includes('nkbihfbeogaeaoehlefnkodbefgpgknn')) {
+                      return true; // Stop propagation
+                    }
+                  };
+
+                  // Filter unhandled promise rejections (Extensions often do this)
+                  window.addEventListener('unhandledrejection', (event) => {
+                    const reason = String(event.reason || "");
+                    if (reason.includes('MetaMask') || reason.includes('nkbihfbeogaeaoehlefnkodbefgpgknn')) {
+                      event.stopImmediatePropagation();
+                      event.preventDefault();
+                    }
+                  }, true);
+
+                  // Aggressive event blocking for extension scripts
                   window.addEventListener('error', (event) => {
-                    if (event.filename && event.filename.includes('nkbihfbeogaeaoehlefnkodbefgpgknn')) {
+                    if (event.filename && (
+                        event.filename.includes('nkbihfbeogaeaoehlefnkodbefgpgknn') ||
+                        event.filename.includes('chrome-extension')
+                    )) {
                       event.stopImmediatePropagation();
                     }
                   }, true);
