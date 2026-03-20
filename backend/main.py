@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent
 UPLOADS_DIR = BASE_DIR / "uploads"
 OUTPUTS_DIR = BASE_DIR / "outputs"
 DB_PATH = BASE_DIR / "cleanclip.db"
-MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+MAX_UPLOAD_BYTES = 20 * 1024 * 1024  # 20MB - Safer for free-tier environments
 ALLOWED_SUFFIXES = {".mp4", ".mov", ".webm", ".gif"}
 PLAN_LIMITS = {"none": 0, "free": 10, "monthly": 50, "yearly": 50}
 
@@ -553,12 +553,21 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
         persist_job(job_id)
         
     except Exception as exc:
-        print(f"Job {job_id} failed: {exc}")
+        error_detail = f"{type(exc).__name__}: {str(exc)}"
+        print(f"Job {job_id} CRITICAL FAILURE: {error_detail}")
+        
+        # Try to extract more info if it's an FFmpeg log issue
+        log_path = OUTPUTS_DIR / f"{job_id}_ffmpeg.log"
+        if log_path.exists():
+             with open(log_path, "r", errors="ignore") as f:
+                 last_log = f.read()[-300:]
+                 error_detail += f" | Engine Log: {last_log}"
+
         jobs[job_id].update({
             "status": "error",
-            "progress": 100,
-            "step": "Failed",
-            "error": str(exc),
+            "progress": 0,
+            "step": "Processing Error",
+            "error": error_detail,
         })
         persist_job(job_id)
     finally:
