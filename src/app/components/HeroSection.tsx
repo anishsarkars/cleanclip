@@ -32,33 +32,33 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
 
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-60 pt-48">
-      {/* Subtle Space-to-Sky Gradient Background */}
-      <div className="absolute inset-0 bg-space-sky -z-20" />
-
-      {/* Subtle Animated Cloud Layers (Bottom Only) */}
-      <div className="absolute inset-x-0 bottom-0 h-[400px] pointer-events-none z-0">
-        {/* Multiple layers of blurred drifts */}
-        <div className="absolute bottom-0 left-[-20%] right-[-20%] h-[300px] bg-white blur-[120px] rounded-full opacity-60 animate-cloud-drift" />
-        <div className="absolute bottom-0 left-[-10%] right-[-10%] h-[240px] bg-white blur-[100px] rounded-full opacity-40 animate-cloud-float delay-1000" />
-        <div className="absolute bottom-[-100px] left-0 right-0 h-[400px] bg-white blur-[140px] rounded-full opacity-80" />
+      {/* 🌌 Minimalistic Cinematic Space-to-Blue Gradient */}
+      <div className="absolute inset-0 bg-[#020617] -z-30" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1E293B]/50 to-[#2563EB]/40 -z-20" />
+      
+      {/* ☁️ High Quality Animated Soft Clouds (Bottom Base) */}
+      <div className="absolute inset-x-0 bottom-0 h-[500px] pointer-events-none z-0">
+          {/* Super-blurred high-definition sphere layers */}
+          <div className="absolute bottom-[-150px] left-[-25%] right-[-25%] h-[400px] bg-white blur-[140px] rounded-full opacity-70 animate-cloud-drift" />
+          <div className="absolute bottom-[-100px] left-[-15%] right-[-15%] h-[320px] bg-white blur-[120px] rounded-full opacity-50 animate-cloud-float-slow" />
+          <div className="absolute bottom-[-200px] left-[-10%] right-[-10%] h-[500px] bg-white blur-[160px] rounded-full opacity-90" />
       </div>
 
-      {/* Fluffy transition vignette */}
-      <div className="absolute inset-x-0 bottom-0 h-80 bg-gradient-to-t from-white via-white/40 to-transparent pointer-events-none z-10" />
+      {/* 🌫️ Fluffy white transition vignette */}
+      <div className="absolute inset-x-0 bottom-0 h-[280px] bg-gradient-to-t from-white via-white/40 to-transparent pointer-events-none z-10" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center">
-
+        
         <h1 className="mb-6 text-white text-5xl md:text-[88px] font-black tracking-[-0.05em] leading-[0.9] animate-fade-in shadow-text">
-          Remove video background<br className="hidden md:block" />in seconds.
+           Remove video background<br className="hidden md:block" /> instantly in seconds.
         </h1>
 
-        <p className="mb-14 max-w-[620px] text-lg font-bold text-white/50 md:text-[22px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
-          Instant background removal and asset cleaning, offering a flawless creative pipeline from space to sky.
+        <p className="mb-14 max-w-[620px] text-lg font-bold text-white/40 md:text-[22px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
+           Instant background removal and asset cleaning, offering a flawless creative pipeline from space to sky.
         </p>
 
-
-        {/* The Defined Black-Border Upload Card */}
-        <div className="w-full max-w-[780px] animate-fade-in delay-300">
+        {/* The Precise Black-Border Upload Card */}
+        <div className="w-full max-w-[780px] animate-fade-in delay-200">
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -72,23 +72,24 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               if (file) handleFile(file);
             }}
             onClick={() => inputRef.current?.click()}
-            className={`group md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[100px] rounded-[64px] border-[1.5px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.3),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-16 px-8 ${isDragging
-              ? "border-black bg-white/20"
-              : "border-black/5 hover:border-black/20 hover:bg-white/10"
-              }`}
+            className={`group md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[64px] border-[1px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.35),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-16 px-8 ${
+              isDragging
+                ? "border-white bg-white/20"
+                : "border-black/5 hover:border-black/20 hover:bg-white/10"
+            }`}
           >
             <div className="mb-12 flex h-24 w-24 items-center justify-center bg-white/5 rounded-[40px] border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
-              <Upload className="w-12 h-12 text-white" strokeWidth={1} />
+               <Upload className="w-12 h-12 text-white" strokeWidth={1} />
             </div>
 
             <h2 className="mb-3 text-[38px] font-black tracking-tighter text-white shadow-text">
-              Drag & Drop to upload
+               Drag & Drop to upload
             </h2>
             <p className="text-white font-bold text-xl shadow-subtext opacity-50">
-              or <span className="underline decoration-white/40 underline-offset-8 hover:opacity-100 transition-all">browse files</span>
+               or <span className="underline decoration-white/40 underline-offset-8 hover:opacity-100 transition-all">browse files</span>
             </p>
             <p className="mt-14 text-white/20 text-[12px] font-black uppercase tracking-[0.3em] shadow-subtext">
-              MP4, MOV, GIF (MAX. 20MB)
+               MP4, MOV, GIF (MAX. 20MB)
             </p>
 
             <input
@@ -108,14 +109,29 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               {error}
             </div>
           )}
-
+          
           {helperText && !error && (
             <div className="animate-fade-in mt-16 text-sm font-black text-white uppercase tracking-[0.3em] shadow-subtext opacity-30">
-              {helperText}
+               {helperText}
             </div>
           )}
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes cloud-drift {
+          0% { transform: translateX(0) scale(1.1); }
+          50% { transform: translateX(5%) scale(1.15); }
+          100% { transform: translateX(0) scale(1.1); }
+        }
+        @keyframes cloud-float-slow {
+          0% { transform: translateY(0); }
+          50% { transform: translateY(-40px); }
+          100% { transform: translateY(0); }
+        }
+        .animate-cloud-drift { animation: cloud-drift 25s ease-in-out infinite; }
+        .animate-cloud-float-slow { animation: cloud-float-slow 15s ease-in-out infinite; }
+      `}</style>
     </section>
   );
 }
