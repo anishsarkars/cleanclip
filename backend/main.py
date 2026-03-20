@@ -141,6 +141,21 @@ def _get_video_meta(path: Path) -> VideoMeta:
     fps = capture.get(cv2.CAP_PROP_FPS) or 24.0
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
     
+    # Accurate frame count fallback using FFmpeg
+    if frame_count <= 0:
+        try:
+            probe_cmd = [
+                "ffprobe", "-v", "error", "-select_streams", "v:0",
+                "-count_packets", "-show_entries", "stream=nb_read_packets",
+                "-of", "csv=p=0", str(path)
+            ]
+            result = subprocess.run(probe_cmd, capture_output=True, text=True)
+            if result.returncode == 0 and result.stdout.strip():
+                frame_count = int(result.stdout.strip())
+                print(f"FFmpeg reported {frame_count} frames for {path.name}")
+        except:
+            pass
+
     # Ensure width and height are even for FFmpeg yuva420p compatibility
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
     height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
@@ -455,11 +470,11 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                 frame_idx += 1
                 
                 # Update progress in memory EVERY frame for smooth "frame ticking" on UI
-                # Map 0-100% frame processing to 30%-95% range
-                progress = 30 + int((frame_idx / (max(total_frames, frame_idx) or 1)) * 65)
+                # Map 0-100% frame processing to 30%-95% range (as float for precision)
+                progress = 30.0 + (frame_idx / (max(total_frames, frame_idx) or 1)) * 65.0
                 remaining = max(0, total_frames - frame_idx) if total_frames > 0 else "?"
                 jobs[job_id].update({
-                    "progress": min(progress, 95),
+                    "progress": round(min(progress, 95.0), 2),
                     "step": f"Removing background {frame_idx}/{total_frames or '?'} ({remaining} remaining)"
                 })
                 

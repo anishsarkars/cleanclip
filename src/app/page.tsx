@@ -135,7 +135,7 @@ export default function Home() {
           setErrorMsg(error instanceof Error ? error.message : "Processing failed.");
           setAppState("error");
         }
-      }, 600); // Increased frequency for smoother "frame" ticking (0.6s instead of 1.5s)
+      }, 250); // Increased frequency for ultra-smooth "frame" ticking (0.25s)
     },
     [stopPolling, syncUser, user],
   );

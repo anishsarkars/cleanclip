@@ -54,7 +54,7 @@ export default function ProcessingScreen({ fileName, progress, step, previewUrl 
           <div className="w-full max-w-sm">
             <div className="mb-4 h-[6px] overflow-hidden rounded-full bg-zinc-100">
               <div 
-                className="h-full rounded-full bg-zinc-950 transition-all duration-700 ease-out" 
+                className="h-full rounded-full bg-zinc-950 transition-all duration-200 ease-linear" 
                 style={{ width: `${progress}%` }} 
               />
             </div>
