@@ -32,9 +32,9 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
 
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-60 pt-48">
-      {/* 🌌 Cinematic Deep Space to Blue Gradient */}
-      <div className="absolute inset-0 bg-[#020617] -z-30" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#1E293B]/60 to-[#2563EB]/40 -z-20" />
+      {/* 🌌 Cinematic OLED Pure Black to Blue Gradient */}
+      <div className="absolute inset-0 bg-[#000000] -z-30" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#000000]/80 via-[#1E293B]/40 to-[#2563EB]/40 -z-20" />
       
       {/* ☁️ High Quality Photographic Cloud Transition Layer */}
       <div className="absolute inset-x-0 bottom-0 h-[600px] pointer-events-none z-0">
