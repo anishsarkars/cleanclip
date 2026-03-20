@@ -90,6 +90,14 @@
   background: linear-gradient(180deg, #7BAACF 0%, #A5C9E1 60%, #B9D7EA 100%);
 }
 
+.shadow-text {
+  text-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+
+.shadow-subtext {
+  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
 .outer-shell {
   @apply border-[1px] border-white/40 rounded-[40px] m-4 md:m-8 overflow-hidden relative;
 }

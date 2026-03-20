@@ -47,11 +47,11 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1000px] flex-col items-center text-center">
         
-        <h1 className="mb-8 text-white text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] animate-fade-in">
+        <h1 className="mb-8 text-white text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] animate-fade-in shadow-text">
            Clean up and process<br/>your clips instantly
         </h1>
 
-        <p className="mb-10 max-w-[620px] text-lg font-medium text-white/80 md:text-[20px] leading-relaxed animate-fade-in delay-100">
+        <p className="mb-10 max-w-[620px] text-lg font-medium text-white/80 md:text-[20px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
            Our professional tool for instant background removal and<br className="hidden md:block"/> asset cleaning, offering a flawless creative pipeline.
         </p>
 

@@ -41,10 +41,10 @@ export default function PricingSection({ onUpgrade }: PricingSectionProps) {
     <section id="pricing" className="py-32 bg-white/5 border-y border-white/10">
       <div className="mx-auto max-w-[1240px] px-6">
         <div className="mb-20 text-center animate-fade-in">
-          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-white/40">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-white/40 shadow-subtext">
             Pricing
           </p>
-          <h2 className="text-5xl md:text-6xl font-black tracking-[-0.03em] text-white">
+          <h2 className="text-5xl md:text-6xl font-black tracking-[-0.03em] text-white shadow-text">
              Simple plans, <span className="text-white/40">no surprises.</span>
           </h2>
         </div>
@@ -65,11 +65,11 @@ export default function PricingSection({ onUpgrade }: PricingSectionProps) {
                 </div>
               )}
 
-              <div className="mb-10">
-                 <h3 className="text-3xl font-bold tracking-tight text-white mb-2">{plan.name}</h3>
-                 <p className="text-white/50 font-medium text-base mb-10 leading-relaxed">{plan.description}</p>
+              <div className="mb-10 lg:h-[220px]">
+                 <h3 className="text-3xl font-bold tracking-tight text-white mb-2 shadow-text">{plan.name}</h3>
+                 <p className="text-white/50 font-medium text-base mb-10 leading-relaxed shadow-subtext">{plan.description}</p>
                  
-                 <div className="flex items-baseline gap-2 text-white">
+                 <div className="flex items-baseline gap-2 text-white shadow-text">
                    <span className="text-6xl font-black tracking-[-0.05em]">{plan.price}</span>
                    <span className="text-lg font-bold opacity-30">{plan.cadence}</span>
                  </div>
@@ -77,7 +77,7 @@ export default function PricingSection({ onUpgrade }: PricingSectionProps) {
 
               <div className="mb-14 space-y-6 flex-1">
                 {plan.features.map((feature) => (
-                  <div key={feature} className="flex items-center gap-4 text-[17px] font-bold text-white/70">
+                  <div key={feature} className="flex items-center gap-4 text-[17px] font-bold text-white/70 shadow-subtext">
                     <CheckCircle2 className="w-5 h-5 text-blue-200" strokeWidth={3} />
                     {feature}
                   </div>
