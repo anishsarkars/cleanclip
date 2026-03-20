@@ -55,7 +55,10 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center">
 
-        <h1 className="mb-3 text-white text-1xl md:text-3xl lg:text-7xl font-bold tracking-[-0.03em] leading-tight animate-fade-in shadow-text">
+        <h1 
+          className="mb-3 text-white text-1xl md:text-8xl lg:text-7xl font-bold tracking-[-0.03em] leading-tight animate-fade-in shadow-text" 
+          style={{ marginTop: '-95px' }}
+        >
           Remove video background in seconds.
         </h1>
 
