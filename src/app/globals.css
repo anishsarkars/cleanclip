@@ -83,11 +83,15 @@
 }
 
 .glass-aero {
-  @apply bg-white/10 backdrop-blur-[40px] border border-white/40 shadow-[0_40px_100px_rgba(0,0,0,0.05)];
+  @apply bg-white/10 backdrop-blur-[40px] border border-white/60 shadow-[0_64px_160px_rgba(0,0,0,0.15)];
 }
 
 .bg-sky {
   background: linear-gradient(180deg, #7BAACF 0%, #A5C9E1 60%, #B9D7EA 100%);
+}
+
+.hero-vignette {
+  background: linear-gradient(to bottom, transparent 80%, rgba(255,255,255,1) 100%);
 }
 
 .shadow-text {

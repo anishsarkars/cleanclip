@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload, ArrowRight } from "lucide-react";
+import { Upload } from "lucide-react";
 
 interface HeroSectionProps {
   onFileSelected: (file: File) => void;
@@ -36,14 +36,14 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
       <div className="absolute inset-0 bg-sky -z-10" />
       
       {/* Fluffy Animated Clouds at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-96 -z-10 opacity-80 animate-clouds">
+      <div className="absolute bottom-0 left-0 right-0 h-[600px] -z-10 opacity-80 animate-clouds">
          <svg viewBox="0 0 1440 320" className="absolute bottom-0 w-full h-auto translate-y-20">
             <path fill="#ffffff" fillOpacity="1" d="M0,128L48,128C96,128,192,128,288,149.3C384,171,480,213,576,213.3C672,213,768,171,864,138.7C960,107,1056,85,1152,90.7C1248,96,1344,128,1392,144L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
          </svg>
-         <svg viewBox="0 0 1440 320" className="absolute bottom-4 w-full h-auto translate-y-24 opacity-50 blur-xl">
-            <path fill="#ffffff" fillOpacity="1" d="M0,224L48,202.7C96,181,192,139,288,144C384,149,480,203,576,224C672,245,768,235,864,208C960,181,1056,139,1152,122.7C1248,107,1344,117,1392,122.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-         </svg>
       </div>
+
+      {/* Hero-to-White Fade Transition (Vignette) */}
+      <div className="absolute inset-x-0 bottom-0 h-64 hero-vignette pointer-events-none z-0" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1000px] flex-col items-center text-center">
         
@@ -51,11 +51,9 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
            Clean up and process<br/>your clips instantly
         </h1>
 
-        <p className="mb-10 max-w-[620px] text-lg font-medium text-white/80 md:text-[20px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
+        <p className="mb-20 max-w-[620px] text-lg font-medium text-white/90 md:text-[20px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
            Our professional tool for instant background removal and<br className="hidden md:block"/> asset cleaning, offering a flawless creative pipeline.
         </p>
-
-        <div className="mb-20" /> {/* Spacer instead of button */}
 
         {/* The Aero Glow Upload Card (match exact style) */}
         <div className="w-full max-w-[720px] animate-fade-in delay-300">
@@ -72,23 +70,23 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               if (file) handleFile(file);
             }}
             onClick={() => inputRef.current?.click()}
-            className={`group flex min-h-[380px] cursor-pointer flex-col items-center justify-center glass-aero rounded-[48px] border-[1.5px] transition-all duration-300 ${
+            className={`group flex min-h-[400px] cursor-pointer flex-col items-center justify-center glass-aero rounded-[48px] border-[1.5px] transition-all duration-500 hover:scale-[1.01] ${
               isDragging
                 ? "border-white bg-white/20"
-                : "border-white/40 bg-white/10 hover:bg-white/15"
+                : "border-white/60 bg-white/10 hover:bg-white/15"
             }`}
           >
-            <div className="mb-6 flex h-20 w-20 items-center justify-center">
-               <Upload className="w-14 h-14 text-white" strokeWidth={1} />
+            <div className="mb-8 flex h-20 w-20 items-center justify-center bg-white/10 rounded-3xl border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+               <Upload className="w-12 h-12 text-white" strokeWidth={1} />
             </div>
 
-            <h2 className="mb-2 text-[32px] font-extrabold tracking-tight text-white">
+            <h2 className="mb-2 text-[32px] font-extrabold tracking-tight text-white shadow-text">
                Drag & Drop to upload
             </h2>
-            <p className="text-white font-medium text-lg">
-               or <span className="underline decoration-white/50 underline-offset-4 hover:text-blue-50 transition-colors">browse files</span>
+            <p className="text-white font-medium text-lg shadow-subtext">
+               or <span className="underline decoration-white/50 underline-offset-4 hover:text-blue-100 transition-colors">browse files</span>
             </p>
-            <p className="mt-4 text-white/60 text-sm font-bold uppercase tracking-widest">
+            <p className="mt-8 text-white/60 text-sm font-bold uppercase tracking-widest shadow-subtext">
                MP4, MOV, PNG, JPG (max. 100MB)
             </p>
 
@@ -111,7 +109,7 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
           )}
           
           {helperText && !error && (
-            <div className="animate-fade-in mt-10 text-sm font-bold text-white/40 uppercase tracking-[0.2em]">
+            <div className="animate-fade-in mt-14 text-sm font-bold text-white uppercase tracking-[0.25em] shadow-subtext">
                {helperText}
             </div>
           )}

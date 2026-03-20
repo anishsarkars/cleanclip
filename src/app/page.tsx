@@ -303,9 +303,9 @@ export default function Home() {
   const showOnboarding = Boolean(user && userInfo?.plan === "none");
 
   return (
-    <main className="min-h-screen bg-sky p-4 md:p-8">
+    <main className="min-h-screen bg-[#F8FAFC]">
       {/* Outer Card Wrap (Reference Style) */}
-      <div className="relative min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-8rem)] bg-white/5 border-[1px] border-white/40 rounded-[48px] overflow-hidden shadow-[0_40px_120px_rgba(0,0,0,0.05)] backdrop-blur-[2px]">
+      <div className="outer-shell bg-white min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-8rem)]">
         
         <Navbar />
 
@@ -322,10 +322,10 @@ export default function Home() {
         )}
 
         {appState === "idle" && (
-          <div className="animate-fade-in pb-20">
+          <div className="animate-fade-in flex flex-col">
             <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
             
-            <div className="space-y-32">
+            <div className="relative z-10">
                <HowItWorks />
                <PricingSection onUpgrade={handlePlanSelection} />
                <Footer />
@@ -334,16 +334,18 @@ export default function Home() {
         )}
 
         {appState === "processing" && selectedFile && (
-          <ProcessingScreen 
-            fileName={selectedFile.name} 
-            progress={progress} 
-            step={step} 
-            startTime={jobStartTime}
-          />
+          <div className="min-h-[80vh] flex items-center justify-center p-12">
+            <ProcessingScreen 
+              fileName={selectedFile.name} 
+              progress={progress} 
+              step={step} 
+              startTime={jobStartTime}
+            />
+          </div>
         )}
 
         {appState === "result" && selectedFile && processedUrl && (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in pt-12">
             <ResultSection
               originalUrl={originalUrl}
               processedUrl={processedUrl}
@@ -351,31 +353,28 @@ export default function Home() {
               onReset={handleReset}
               onDownload={handleDownload}
             />
-            <Footer />
+            <div className="mt-20">
+               <Footer />
+            </div>
           </div>
         )}
 
         {appState === "error" && (
-          <section className="flex min-h-[60vh] items-center justify-center px-6">
-            <div className="w-full max-w-xl glass-aero rounded-[48px] p-12 text-center text-white">
-              <h2 className="text-4xl font-bold mb-4 tracking-tight">Something went wrong</h2>
-              <div className="bg-white/10 p-6 rounded-3xl mb-10 text-left border border-white/20">
-                 <p className="font-mono text-sm leading-7 break-words opacity-80">{errorMsg}</p>
+          <section className="flex min-h-[80vh] items-center justify-center px-6">
+            <div className="w-full max-w-xl bg-white border border-black/5 rounded-[48px] p-12 text-center shadow-xl">
+              <h2 className="text-4xl font-bold mb-4 tracking-tight text-zinc-950">Something went wrong</h2>
+              <div className="bg-zinc-50 p-6 rounded-3xl mb-10 text-left border border-black/5">
+                 <p className="font-mono text-sm leading-7 break-words text-zinc-600">{errorMsg}</p>
               </div>
               <button 
                 onClick={handleReset}
-                className="w-full h-14 rounded-full bg-white text-zinc-950 font-bold hover:scale-105 active:scale-95 transition-all"
+                className="w-full h-14 rounded-full bg-zinc-950 text-white font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-lg"
               >
                 Go back to home
               </button>
             </div>
           </section>
         )}
-        
-        <div className="mt-auto px-12 py-10 flex justify-between items-center text-white/40 font-bold text-[10px] uppercase tracking-[0.4em]">
-           <span>Neural Pipeline 4.0</span>
-           <span>CleanClip AI</span>
-        </div>
       </div>
     </main>
   );

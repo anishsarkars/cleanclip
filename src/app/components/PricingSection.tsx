@@ -38,47 +38,47 @@ interface PricingSectionProps {
 
 export default function PricingSection({ onUpgrade }: PricingSectionProps) {
   return (
-    <section id="pricing" className="py-32 bg-white/5 border-y border-white/10">
-      <div className="mx-auto max-w-[1240px] px-6">
+    <section id="pricing" className="bg-[#FAFAFA] py-24 md:py-32">
+      <div className="section-container">
         <div className="mb-20 text-center animate-fade-in">
-          <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-white/40 shadow-subtext">
+          <p className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">
             Pricing
           </p>
-          <h2 className="text-5xl md:text-6xl font-black tracking-[-0.03em] text-white shadow-text">
-             Simple plans, <span className="text-white/40">no surprises.</span>
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-zinc-950">
+             Simple plans, <span className="text-zinc-400">no surprises.</span>
           </h2>
         </div>
 
-        <div className="grid gap-10 lg:grid-cols-3">
+        <div className="grid gap-8 lg:grid-cols-3">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`relative rounded-[48px] p-10 flex flex-col transition-all duration-700 hover:shadow-[0_48px_140px_rgba(0,0,0,0.15)] group ${
+              className={`relative rounded-[40px] p-10 flex flex-col transition-all duration-500 hover:shadow-[0_40px_100px_rgba(0,0,0,0.05)] group ${
                 plan.featured
-                  ? "glass-aero border-white shadow-2xl bg-white/20"
-                  : "bg-white/5 border-white/10 hover:bg-white/10"
+                  ? "bg-zinc-950 text-white shadow-2xl scale-[1.02]"
+                  : "bg-white border border-black/5 text-zinc-950 hover:bg-zinc-50/50"
               }`}
             >
               {plan.featured && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-white text-zinc-900 px-5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.2em] shadow-xl">
-                   Most Popular
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-white text-zinc-950 px-5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.2em] shadow-lg border border-black/5">
+                   Popular Choice
                 </div>
               )}
 
-              <div className="mb-10 lg:h-[220px]">
-                 <h3 className="text-3xl font-bold tracking-tight text-white mb-2 shadow-text">{plan.name}</h3>
-                 <p className="text-white/50 font-medium text-base mb-10 leading-relaxed shadow-subtext">{plan.description}</p>
+              <div className="mb-10">
+                 <h3 className="text-2xl font-bold tracking-tight mb-2">{plan.name}</h3>
+                 <p className={`text-base font-medium mb-10 leading-relaxed ${plan.featured ? "text-white/60" : "text-zinc-500"}`}>{plan.description}</p>
                  
-                 <div className="flex items-baseline gap-2 text-white shadow-text">
-                   <span className="text-6xl font-black tracking-[-0.05em]">{plan.price}</span>
-                   <span className="text-lg font-bold opacity-30">{plan.cadence}</span>
+                 <div className="flex items-baseline gap-2">
+                   <span className="text-5xl font-bold tracking-tight">{plan.price}</span>
+                   <span className={`text-lg font-bold ${plan.featured ? "text-white/30" : "text-zinc-300"}`}>{plan.cadence}</span>
                  </div>
               </div>
 
               <div className="mb-14 space-y-6 flex-1">
                 {plan.features.map((feature) => (
-                  <div key={feature} className="flex items-center gap-4 text-[17px] font-bold text-white/70 shadow-subtext">
-                    <CheckCircle2 className="w-5 h-5 text-blue-200" strokeWidth={3} />
+                  <div key={feature} className={`flex items-center gap-4 text-[16px] font-bold ${plan.featured ? "text-white/80" : "text-zinc-600"}`}>
+                    <CheckCircle2 className={`w-5 h-5 ${plan.featured ? "text-blue-400" : "text-blue-500"}`} strokeWidth={3} />
                     {feature}
                   </div>
                 ))}
@@ -86,10 +86,10 @@ export default function PricingSection({ onUpgrade }: PricingSectionProps) {
 
               <button
                 onClick={() => onUpgrade(plan.id)}
-                className={`w-full h-16 rounded-[24px] text-lg font-bold transition-all active:scale-95 ${
+                className={`w-full h-14 rounded-full text-base font-bold transition-all active:scale-95 ${
                   plan.featured
-                    ? "bg-white text-zinc-950 hover:scale-[1.02] shadow-[0_12px_40px_rgba(255,255,255,0.2)]"
-                    : "bg-white/20 text-white hover:bg-white/30 border border-white/20"
+                    ? "bg-white text-zinc-950 hover:bg-zinc-100 shadow-[0_12px_40px_rgba(255,b255,255,0.1)]"
+                    : "bg-zinc-950 text-white hover:bg-black"
                 }`}
               >
                 {plan.id === "free" ? "Start Free" : `Choose ${plan.name}`}
