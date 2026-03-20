@@ -40,6 +40,7 @@ export default function Home() {
   const [progress, setProgress] = useState(0);
   const [step, setStep] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [jobStartTime, setJobStartTime] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [helperText, setHelperText] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -115,7 +116,8 @@ export default function Home() {
           const response = await fetch(`${API}/status/${jobId}?t=${Date.now()}`);
           const data = await response.json();
           if (!response.ok) throw new Error(data.detail || "Unable to fetch status.");
-
+          
+          if (data.created_at) setJobStartTime(data.created_at);
           const newProgress = data.progress ?? 0;
           setProgress((prev) => {
             // If backend progress is actually ahead, jump to it
@@ -331,6 +333,7 @@ export default function Home() {
           progress={progress} 
           step={step} 
           previewUrl={previewUrl} 
+          startTime={jobStartTime}
         />
       )}
 
