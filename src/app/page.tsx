@@ -120,11 +120,11 @@ export default function Home() {
           if (data.created_at) setJobStartTime(data.created_at);
           const newProgress = data.progress ?? 0;
           setProgress((prev) => {
-            // Jump if backend is clearly ahead
+            // If backend progress is actually ahead, jump to it
             if (newProgress > prev) return newProgress;
-            // Otherwise, keep the UI 'alive' with a smooth incremental creep (0.3% every 250ms)
-            // Cap at 98% to ensure it only completes on a real 'done' status
-            if (prev < 98) return prev + 0.3;
+            // Otherwise, drift slowly forward (0.1% every 250ms) to show "life"
+            // Cap drift at 95% so it never finishes without the backend
+            if (prev < 95) return prev + 0.1;
             return prev;
           });
           
@@ -315,7 +315,8 @@ export default function Home() {
       <div className={`transition-all duration-700 ${scrolled ? "p-4 md:p-6" : "p-0"}`}>
         <div className={`relative overflow-hidden transition-all duration-1000 bg-black ${scrolled ? "rounded-[48px] md:rounded-[64px] shadow-2xl" : "rounded-none"}`}>
           
-          <Navbar />
+          {/* Immersive Cleanup: Hide Nav during critical processing to focus on the 'Clean UI' */}
+          {appState !== "processing" && <Navbar />}
 
           {showOnboarding && (
             <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
@@ -326,6 +327,7 @@ export default function Home() {
               onChoosePlan={handlePlanSelection}
               onClose={() => setShowPaywall(false)}
               loadingPlan={loadingPlan}
+              onUpgrade={handlePlanSelection}
             />
           )}
 
