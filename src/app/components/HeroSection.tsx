@@ -56,11 +56,11 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center">
         
         <h1 className="mb-6 text-white text-4xl md:text-5xl lg:text-[88px] font-black tracking-[-0.05em] leading-[0.9] animate-fade-in shadow-text">
-           Remove video background<br className="hidden md:block" /> instantly in seconds.
+           Remove video background<br className="hidden md:block" /> instantly.
         </h1>
 
-        <p className="mb-14 max-w-[620px] text-lg font-bold text-white/50 md:text-[22px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
-           Instant background removal and asset cleaning, offering a flawless creative pipeline from space to sky.
+        <p className="mb-14 max-w-[560px] text-lg font-bold text-white/50 md:text-[22px] leading-tight animate-fade-in delay-100 shadow-subtext">
+           Clean assets in seconds. High-precision AI removal <br className="hidden md:block" /> engineered for world-class creators.
         </p>
 
         {/* The Defined Black-Border Upload Card */}
