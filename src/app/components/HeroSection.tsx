@@ -75,12 +75,12 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center translate-y-[-60px] md:translate-y-[-110px]">
 
         <h1
-          className="mb-8 text-white text-1xl md:text-8xl lg:text-7xl font-medium tracking-[-0.03em] leading-tight animate-fade-in shadow-text"
+          className="mb-8 text-white text-4xl md:text-8xl lg:text-7xl font-bold tracking-[-0.03em] leading-tight animate-fade-in shadow-text"
         >
           Remove video background in seconds.
         </h1>
 
-        <p className="mb-14 max-w-[520px] text-lg font-medium text-white/50 md:text-[20px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
+        <p className="mb-14 max-w-[520px] text-[16px] font-medium text-white/50 md:text-[20px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
           Clean your video's or gif's background with AI.
         </p>
 
@@ -99,22 +99,22 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               if (file) handleFile(file);
             }}
             onClick={() => inputRef.current?.click()}
-            className={`group md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[64px] border-[1.5px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-16 px-8 ${isDragging
+            className={`group min-h-[320px] md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[48px] md:rounded-[64px] border-[1.5px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-12 md:py-16 px-6 md:px-8 ${isDragging
               ? "border-white bg-white/20"
               : "border-black/5 hover:border-black/20 hover:bg-white/10"
               }`}
           >
-            <div className="mb-12 flex h-24 w-24 items-center justify-center bg-white/5 rounded-[40px] border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
-              <Upload className="w-12 h-12 text-white" strokeWidth={1} />
+            <div className="mb-10 md:mb-12 flex h-20 w-20 md:h-24 md:w-24 items-center justify-center bg-white/5 rounded-[32px] md:rounded-[40px] border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+              <Upload className="w-10 h-10 md:w-12 md:h-12 text-white" strokeWidth={1} />
             </div>
 
-            <h2 className="mb-3 text-[38px] font-black tracking-tighter text-white shadow-text">
+            <h2 className="mb-3 text-[28px] md:text-[38px] font-black tracking-tighter text-white shadow-text">
               Drag & Drop to upload
             </h2>
-            <p className="text-white font-bold text-xl shadow-subtext opacity-50">
+            <p className="text-white font-bold text-lg md:text-xl shadow-subtext opacity-50">
               or <span className="underline decoration-white/40 underline-offset-8 hover:opacity-100 transition-all">browse files</span>
             </p>
-            <p className="mt-14 text-white/20 text-[12px] font-black uppercase tracking-[0.3em] shadow-subtext">
+            <p className="mt-10 md:mt-14 text-white/20 text-[10px] md:text-[12px] font-black uppercase tracking-[0.3em] shadow-subtext">
               MP4, MOV, GIF (MAX. 20MB)
             </p>
 
