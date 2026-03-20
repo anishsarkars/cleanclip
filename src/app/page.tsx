@@ -151,54 +151,70 @@ export default function Home() {
       setHelperText(null);
       setSelectedFile(file);
       setOriginalUrl(URL.createObjectURL(file));
-      setProgress(0);
-      setStep("Preparing upload...");
       setAppState("processing");
-
-      // Start a fake progress interval (0 to 15%) while uploading
-      const uploadSim = setInterval(() => {
-        setProgress((prev) => (prev < 15 ? prev + 1 : prev));
-      }, 300);
+      setStep("Starting upload...");
+      setProgress(0);
 
       try {
-        setStep("Uploading to server");
         const formData = new FormData();
         formData.append("file", file);
         if (user) formData.append("clerk_user_id", user.id);
 
-        const response = await fetch(`${API}/process-video`, {
-          method: "POST",
-          body: formData,
-        });
-        
-        clearInterval(uploadSim); // Done uploading
-        const data = await response.json();
+        // We use XMLHttpRequest for real upload progress tracking
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${API}/process-video`, true);
 
-        if (!response.ok) {
-          if (data.detail === "ONBOARDING_REQUIRED") {
-            await syncUser();
-            setAppState("idle");
-            return;
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            // Map 0-100% upload to 0-30% on the progress bar
+            const percent = Math.round((event.loaded / event.total) * 30);
+            setProgress(percent);
+            setStep(`Uploading (${Math.round((event.loaded / event.total) * 100)}%)`);
           }
-          if (data.detail === "CREDITS_EXHAUSTED") {
-            setShowPaywall(true);
-            setAppState("idle");
-            return;
-          }
-          if (data.detail === "GUEST_LIMIT_REACHED") {
-            openSignUp();
-            setAppState("idle");
-            return;
-          }
-          throw new Error(data.detail || "Upload failed.");
-        }
+        };
 
-        setProgress(15);
-        setStep("Received by server");
-        pollStatus(data.job_id);
+        xhr.onload = async () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const data = JSON.parse(xhr.responseText);
+            setStep("Ready to process...");
+            setProgress(30);
+            pollStatus(data.job_id);
+          } else {
+            let errorDetail = "Upload failed.";
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              errorDetail = errorData.detail || errorDetail;
+              
+              if (errorDetail === "ONBOARDING_REQUIRED") {
+                await syncUser();
+                setAppState("idle");
+                return;
+              }
+              if (errorDetail === "CREDITS_EXHAUSTED") {
+                setShowPaywall(true);
+                setAppState("idle");
+                return;
+              }
+              if (errorDetail === "GUEST_LIMIT_REACHED") {
+                openSignUp();
+                setAppState("idle");
+                return;
+              }
+            } catch { /* ignore parse error */ }
+            
+            setErrorMsg(errorDetail);
+            setAppState("error");
+          }
+        };
+
+        xhr.onerror = () => {
+          setErrorMsg("Network error during upload.");
+          setAppState("error");
+        };
+
+        xhr.send(formData);
       } catch (error) {
-        clearInterval(uploadSim);
-        setErrorMsg(error instanceof Error ? error.message : "Upload failed.");
+        setErrorMsg(error instanceof Error ? error.message : "Initialization failed.");
         setAppState("error");
       }
     },

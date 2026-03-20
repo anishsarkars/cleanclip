@@ -342,7 +342,7 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
     temp_output = OUTPUTS_DIR / f"{job_id}_tmp.webm"
     
     try:
-        jobs[job_id].update({"status": "processing", "progress": 5, "step": "Inspecting video"})
+        jobs[job_id].update({"status": "processing", "progress": 32, "step": "Inspecting video"})
         persist_job(job_id)
         meta = _get_video_meta(input_path)
         
@@ -378,7 +378,7 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
             if not cap.isOpened():
                 raise RuntimeError("OpenCV failed to open the video file.")
 
-            jobs[job_id].update({"progress": 10, "step": "Processing frames (streaming)"})
+            jobs[job_id].update({"progress": 35, "step": "Processing frames (streaming)"})
             persist_job(job_id)
 
             while cap.isOpened():
@@ -455,7 +455,8 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                 frame_idx += 1
                 
                 # Update progress in memory EVERY frame for smooth "frame ticking" on UI
-                progress = 10 + int((frame_idx / (max(total_frames, frame_idx) or 1)) * 85)
+                # Map 0-100% frame processing to 30%-95% range
+                progress = 30 + int((frame_idx / (max(total_frames, frame_idx) or 1)) * 65)
                 remaining = max(0, total_frames - frame_idx) if total_frames > 0 else "?"
                 jobs[job_id].update({
                     "progress": min(progress, 95),
