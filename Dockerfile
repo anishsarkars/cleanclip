@@ -17,7 +17,8 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 # Create necessary directories at the root level (managed by main.py)
 RUN mkdir -p uploads outputs
 
-# Pre-download the u2net model to avoid first-use delay
+# Pre-download the model to avoid first-use delay (we use isnet-general-use in main.py)
+RUN python -c "from rembg import new_session; new_session('isnet-general-use')"
 RUN python -c "from rembg import new_session; new_session('u2net')"
 
 # Copy the entire backend directory into the container

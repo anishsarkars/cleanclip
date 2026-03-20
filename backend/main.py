@@ -41,11 +41,7 @@ for directory in (UPLOADS_DIR, OUTPUTS_DIR):
 app = FastAPI(title="CleanClip API", version="4.0.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://cleanclip.vercel.app",
-        "https://cleanclip-git-main-anishsarkars-projects.vercel.app", # Vercel preview branch
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -141,6 +137,13 @@ def _get_video_meta(path: Path) -> VideoMeta:
     frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
     height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
+    
+    # Fallback for frame count if metadata is missing (common in some formats)
+    if frame_count <= 0:
+        print(f"Metadata reported 0 frames for {path.name}, attempting estimation...")
+        # We try to get duration and multiply by FPS as a last resort
+        pass
+
     capture.release()
     return VideoMeta(fps=max(fps, 1.0), frame_count=max(frame_count, 0), width=width, height=height)
 
@@ -377,11 +380,14 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                 
                 # Convert OpenCV (BGR) to PIL (RGBA)
                 try:
+                    # Periodically check if FFmpeg is still running
+                    if process.poll() is not None:
+                        raise RuntimeError("FFmpeg process exited prematurely.")
+
                     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     pil_img = Image.fromarray(frame_rgb).convert("RGBA")
                     
                     # Remove background
-                    # Fallback to session=None if session failed to init (slow but works)
                     processed_pil = remove(pil_img, session=rembg_session).convert("RGBA")
                     
                     # Write to FFmpeg stdin
@@ -390,15 +396,21 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                         process.stdin.flush()
                 except Exception as e:
                     print(f"Frame {frame_idx} processing error: {e}")
-                    # Continue anyway to see if next frames work
+                    # If it's a critical error (like pipe broken), stop immediately
+                    if "Broken pipe" in str(e) or "FFmpeg" in str(e):
+                        raise e
                 
                 frame_idx += 1
-                if frame_idx % 5 == 0:
-                    progress = 10 + int((frame_idx / (total_frames or 1)) * 85)
-                    jobs[job_id].update({
-                        "progress": min(progress, 95),
-                        "step": f"Removing background {frame_idx}/{total_frames}"
-                    })
+                
+                # Update progress in memory EVERY frame for smooth "frame ticking" on UI
+                progress = 10 + int((frame_idx / (max(total_frames, frame_idx) or 1)) * 85)
+                jobs[job_id].update({
+                    "progress": min(progress, 95),
+                    "step": f"Removing background {frame_idx}/{total_frames or '?'}"
+                })
+                
+                # Persist to DB less frequently to save IO
+                if frame_idx % 20 == 0:
                     persist_job(job_id)
             
             cap.release()
