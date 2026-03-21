@@ -150,9 +150,26 @@ export default function Home() {
             setProgress(100);
             setStep("Ready!");
             
-            // Short delay so user can see it reach 100%
             setTimeout(async () => {
-              if (data.result_url) setProcessedUrl(`${API}${data.result_url}`);
+              if (data.result_url) {
+                const url = `${API}${data.result_url}`;
+                setProcessedUrl(url);
+
+                // Add to Recents
+                if (selectedFile) {
+                  const recentsStr = localStorage.getItem("cleanclip_recents");
+                  let stored = recentsStr ? JSON.parse(recentsStr) : [];
+                  stored.unshift({
+                    name: selectedFile.name,
+                    url: url,
+                    timestamp: Date.now()
+                  });
+                  // Keep only last 5
+                  stored = stored.slice(0, 5);
+                  localStorage.setItem("cleanclip_recents", JSON.stringify(stored));
+                  window.dispatchEvent(new Event("cleanclip_recents_updated"));
+                }
+              }
               if (user) await syncUser();
               setAppState("result");
             }, 800);
@@ -377,7 +394,7 @@ export default function Home() {
 
           {appState === "idle" && (
             <div className="animate-fade-in flex flex-col">
-              <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
+              <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} userPlan={userInfo?.plan} />
               
               {/* Unified White Background Container */}
               <div className="relative z-10 bg-white">

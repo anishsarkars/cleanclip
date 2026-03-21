@@ -4,6 +4,7 @@ import Link from "next/link";
 import { UserButton, useClerk, useUser } from "@clerk/nextjs";
 import Logo from "./Logo";
 import { Crown, Star } from "lucide-react";
+import RecentsMenu from "./RecentsMenu";
 
 interface NavbarProps {
   userPlan?: string;
@@ -30,6 +31,7 @@ export default function Navbar({ userPlan }: NavbarProps) {
       <div className="flex items-center gap-4">
         {user ? (
           <>
+            <RecentsMenu />
             {(userPlan === "pro" || userPlan === "lifetime") && (
               <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${
                 userPlan === "lifetime" 

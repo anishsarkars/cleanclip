@@ -23,6 +23,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <head>
+          <link rel="icon" href="/2.png" sizes="any" />
           {/* Hardened Silence for MetaMask/Noise Extension errors in Next.js 16 Overlay */}
           <script
             dangerouslySetInnerHTML={{

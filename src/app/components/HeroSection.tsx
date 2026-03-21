@@ -6,18 +6,25 @@ import { Upload, ArrowRight } from "lucide-react";
 interface HeroSectionProps {
   onFileSelected: (file: File) => void;
   helperText?: string | null;
+  userPlan?: string | null;
 }
 
 const ACCEPTED = ["video/mp4", "video/quicktime", "image/gif", "video/webm"];
 
-export default function HeroSection({ onFileSelected, helperText }: HeroSectionProps) {
+export default function HeroSection({ onFileSelected, helperText, userPlan }: HeroSectionProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const validate = (file: File) => {
     if (!ACCEPTED.includes(file.type)) return "Use MP4, MOV, GIF, or WebM.";
-    if (file.size > 20 * 1024 * 1024) return "Maximum file size is 20MB for current capacity.";
+
+    // Determine limit
+    const isPro = userPlan === "pro" || userPlan === "lifetime";
+    const limitMB = isPro ? 100 : 50;
+    const limitBytes = limitMB * 1024 * 1024;
+
+    if (file.size > limitBytes) return `Maximum file size is ${limitMB}MB for your current plan.`;
     return null;
   };
 
@@ -75,13 +82,13 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
       <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center translate-y-[-60px] md:translate-y-[-110px]">
 
         <h1
-          className="mb-8 text-white text-4xl md:text-8xl lg:text-7xl font-bold tracking-[-0.03em] leading-tight animate-fade-in shadow-text"
+          className="mb-8 text-white text-4xl md:text-8xl lg:text-5xl font-bold tracking-[-0.03em] leading-tight animate-fade-in shadow-text"
         >
           Remove video background in seconds.
         </h1>
 
         <p className="mb-14 max-w-[520px] text-[16px] font-medium text-white/50 md:text-[20px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
-          Clean your video's or gif's background with AI.
+          Clean your video or gif backgrounds with AI.
         </p>
 
         {/* The Defined Black-Border Upload Card */}
@@ -115,7 +122,7 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               or <span className="underline decoration-white/40 underline-offset-8 hover:opacity-100 transition-all">browse files</span>
             </p>
             <p className="mt-10 md:mt-14 text-white/20 text-[10px] md:text-[12px] font-black uppercase tracking-[0.3em] shadow-subtext">
-              MP4, MOV, GIF (MAX. 20MB)
+              MP4, MOV, GIF (MAX. {userPlan === "pro" || userPlan === "lifetime" ? "100MB" : "50MB"})
             </p>
 
             <input
