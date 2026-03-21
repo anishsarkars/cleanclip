@@ -424,85 +424,89 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
             jobs[job_id].update({"progress": 35, "step": "Processing frames (streaming)"})
             persist_job(job_id)
 
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret:
-                    if frame_idx == 0:
-                        raise RuntimeError("Failed to read any frames from the video.")
-                    break
-                
-                try:
-                    if process.poll() is not None:
-                         raise RuntimeError("FFmpeg process exited prematurely.")
-
-                    # Matrix Optimization: Ensure even dimensions
-                    if frame.shape[1] != meta.width or frame.shape[0] != meta.height:
-                        frame = cv2.resize(frame, (meta.width, meta.height))
-
-                    # ⚡ Speed Multiplier: Neural Matting at Downscaled Resolution
-                    # Neural models (U2Net) internally resize to ~320x320 anyway.
-                    # By doing it here, we save massive CPU cycles and memory copying.
-                    proc_h, proc_w = 480, int(480 * (meta.width / meta.height))
-                    proc_frame = cv2.resize(frame, (proc_w, proc_h))
-                    
-                    # Convert BGR to RGB for Neural Engine
-                    proc_rgb = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2RGB)
-                    
-                    global rembg_session
+            global rembg_session
+            if rembg_session is None:
+                with session_lock:
                     if rembg_session is None:
-                        with session_lock:
-                            if rembg_session is None:
-                                print("⚡ Turbo Neural Engine Activating (u2netp)...")
-                                try:
-                                    # u2netp is the 'Pocket' version, optimized for speed
-                                    rembg_session = new_session("u2netp")
-                                except:
-                                    rembg_session = new_session("u2net")
+                        print("⚡ Turbo Neural Engine Activating (u2netp)...")
+                        try:
+                            rembg_session = new_session("u2netp")
+                        except:
+                            rembg_session = new_session("u2net")
 
-                    # Neural Mask Generation (post_process_mask=False for 3x speedup)
-                    mask = remove(proc_rgb, session=rembg_session, only_mask=True, post_process_mask=False)
-                    
-                    # upscale mask back to original resolution
-                    full_mask = cv2.resize(mask, (meta.width, meta.height), interpolation=cv2.INTER_LANCZOS4)
-                    
-                    # Apply Mask to original high-res frame via NumPy vectorization
-                    # frame is BGR, we need RGBA
-                    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    
-                    # Create alpha channel from mask
-                    alpha = full_mask.astype(float) / 255.0
-                    
-                    # Stack RGB and Alpha (Vectorized NumPy is much faster than PIL loops)
-                    import numpy as np
-                    rgba_frame = np.dstack((frame_rgb, full_mask))
-                    
-                    # Write bytes direct to FFmpeg pipe
-                    if process.stdin:
-                        process.stdin.write(rgba_frame.tobytes())
-                        process.stdin.flush()
-                        
-                    # Preview Update (once every few seconds)
-                    if frame_idx % 150 == 0:
-                        import io, base64
-                        thumb_io = io.BytesIO()
-                        # Use proc_frame with proc_mask for lightning fast thumbnail
-                        proc_rgba = np.dstack((proc_rgb, mask))
-                        thumb_img = Image.fromarray(proc_rgba).convert("RGBA")
-                        thumb_img.save(thumb_io, "WEBP", quality=50)
-                        thumb_b64 = base64.b64encode(thumb_io.getvalue()).decode()
-                        jobs[job_id]["preview_frame"] = f"data:image/webp;base64,{thumb_b64}"
+            def _process_single_frame(frm, f_idx):
+                if frm.shape[1] != meta.width or frm.shape[0] != meta.height:
+                    frm = cv2.resize(frm, (meta.width, meta.height))
 
-                except Exception as e:
-                    print(f"Frame {frame_idx} error: {e}")
-                    if "Broken pipe" in str(e): raise e
+                proc_h, proc_w = 320, int(320 * (meta.width / meta.height))
+                proc_frame = cv2.resize(frm, (proc_w, proc_h))
+                proc_rgb = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2RGB)
                 
-                frame_idx += 1
-                progress = 30.0 + (frame_idx / (max(total_frames, frame_idx) or 1)) * 65.0
-                jobs[job_id].update({
-                    "progress": round(min(progress, 95.0), 2),
-                    "step": f"Turbo Cleaning: {frame_idx}/{total_frames or '?'}"
-                })
-                if frame_idx % 200 == 0: persist_job(job_id)
+                mask = remove(proc_rgb, session=rembg_session, only_mask=True, post_process_mask=False)
+                full_mask = cv2.resize(mask, (meta.width, meta.height), interpolation=cv2.INTER_LINEAR)
+                
+                frame_rgb = cv2.cvtColor(frm, cv2.COLOR_BGR2RGB)
+                import numpy as np
+                rgba_frame = np.dstack((frame_rgb, full_mask))
+                
+                tb64 = None
+                if f_idx % 60 == 0:
+                    import io, base64
+                    thumb_io = io.BytesIO()
+                    proc_rgba = np.dstack((proc_rgb, mask))
+                    thumb_img = Image.fromarray(proc_rgba).convert("RGBA")
+                    thumb_img.save(thumb_io, "WEBP", quality=30)
+                    tb64 = f"data:image/webp;base64,{base64.b64encode(thumb_io.getvalue()).decode()}"
+                    
+                return rgba_frame.tobytes(), tb64
+
+            import concurrent.futures
+            import os
+            
+            workers = min(12, (os.cpu_count() or 2) * 2)
+            futures = {}
+            next_submit = 0
+            next_write = 0
+            
+            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+                while cap.isOpened() or futures:
+                    while cap.isOpened() and len(futures) < workers * 2:
+                        ret, frame = cap.read()
+                        if not ret:
+                            cap.release()
+                            if next_submit == 0:
+                                raise RuntimeError("Failed to read any frames from the video.")
+                            break
+                        futures[next_submit] = pool.submit(_process_single_frame, frame, next_submit)
+                        next_submit += 1
+                        
+                    if next_write in futures:
+                        if futures[next_write].done():
+                            try:
+                                if process.poll() is not None:
+                                    raise RuntimeError("FFmpeg process exited prematurely.")
+                                frame_bytes, thumb_b64 = futures[next_write].result()
+                                if process.stdin:
+                                    process.stdin.write(frame_bytes)
+                                    process.stdin.flush()
+                                if thumb_b64:
+                                    jobs[job_id]["preview_frame"] = thumb_b64
+                            except Exception as e:
+                                print(f"Frame {next_write} error: {e}")
+                                if "Broken pipe" in str(e): raise e
+                            
+                            del futures[next_write]
+                            next_write += 1
+                            
+                            progress = 30.0 + (next_write / (max(total_frames, next_write) or 1)) * 65.0
+                            jobs[job_id].update({
+                                "progress": round(min(progress, 95.0), 2),
+                                "step": f"Turbo Cleaning: {next_write}/{total_frames or '?'}"
+                            })
+                            if next_write % 100 == 0: persist_job(job_id)
+                        else:
+                            import time
+                            time.sleep(0.005)
             
             cap.release()
             if process.stdin: process.stdin.close()
