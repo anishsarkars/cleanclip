@@ -8,11 +8,11 @@ export default function Logo({ className = "h-8 w-8", color = "white" }: { class
   return (
     <div className={`relative ${className} flex items-center justify-center`}>
       <Image 
-        src="/2.png" 
+        src={color === "black" ? "/1.png" : "/2.png"} 
         alt="CleanClip Logo" 
         width={512} 
         height={512} 
-        className={`w-full h-full object-contain ${color === "black" ? "invert opacity-90" : "brightness-200"}`}
+        className={`w-full h-full object-contain ${color === "black" ? "opacity-90 grayscale contrast-125" : "brightness-200"}`}
         priority
       />
     </div>

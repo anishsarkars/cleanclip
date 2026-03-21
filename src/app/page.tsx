@@ -361,7 +361,7 @@ export default function Home() {
         <div className="relative overflow-hidden bg-black rounded-none">
           
           {/* Immersive Cleanup: Hide Nav during critical processing to focus on the 'Clean UI' */}
-          {appState !== "processing" && <Navbar userPlan={userInfo?.plan} />}
+          {appState !== "processing" && <Navbar userPlan={userInfo?.plan} theme={appState === "result" ? "light" : "dark"} />}
 
           {/* 🔔 Premium Notification Toast */}
           {notification && (

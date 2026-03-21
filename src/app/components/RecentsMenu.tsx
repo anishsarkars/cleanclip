@@ -9,7 +9,7 @@ interface RecentItem {
   timestamp: number;
 }
 
-export default function RecentsMenu() {
+export default function RecentsMenu({ theme = "dark" }: { theme?: "dark" | "light" }) {
   const [isOpen, setIsOpen] = useState(false);
   const [recents, setRecents] = useState<RecentItem[]>([]);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -72,7 +72,7 @@ export default function RecentsMenu() {
       }}
     >
       <button 
-        className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer text-white/40 uppercase tracking-[0.2em] font-black text-[14px]"
+        className={`flex items-center gap-1.5 transition-colors cursor-pointer uppercase tracking-[0.2em] font-black text-[14px] ${theme === "light" ? "text-black/40 hover:text-black" : "text-white/40 hover:text-white"}`}
         onClick={() => setIsOpen(!isOpen)}
       >
         <Clock className="w-4 h-4" />
