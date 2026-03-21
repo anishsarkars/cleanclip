@@ -356,7 +356,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] font-sans">
-      <PromoBanner />
+      {appState === "idle" && <PromoBanner />}
       <div className="p-0">
         <div className="relative overflow-hidden bg-black rounded-none">
           
