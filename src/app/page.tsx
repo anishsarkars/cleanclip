@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useClerk, useUser } from "@clerk/nextjs";
+import confetti from "canvas-confetti";
 import Footer from "./components/Footer";
 import HeroSection from "./components/HeroSection";
 import HowItWorks from "./components/HowItWorks";
@@ -173,6 +174,15 @@ export default function Home() {
               }
               if (user) await syncUser();
               setAppState("result");
+              
+              // Subtle confetti effect
+              confetti({
+                particleCount: 150,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: ['#2563EB', '#10B981', '#F8FAFC', '#60A5FA', '#34D399'],
+                disableForReducedMotion: true
+              });
             }, 800);
           }
 
@@ -313,13 +323,10 @@ export default function Home() {
               : "pdt_0NavKn2G5oln4JN2cMrzM";
           
           const returnUrl = encodeURIComponent(`${window.location.origin}?success=true`);
+          const email = encodeURIComponent(user.primaryEmailAddress?.emailAddress || "");
           const baseUrl = "checkout.dodopayments.com";
           
-          let checkoutUrl = `https://${baseUrl}/buy/${productId}?client_reference_id=${user.id}&return_url=${returnUrl}`;
-          
-          if (plan === "lifetime") {
-            checkoutUrl += "&quantity=1";
-          }
+          let checkoutUrl = `https://${baseUrl}/buy/${productId}?quantity=1&redirect_url=${returnUrl}&customer_email=${email}&client_reference_id=${user.id}`;
           
           window.location.href = checkoutUrl;
         }

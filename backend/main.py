@@ -784,6 +784,16 @@ async def dodo_webhook(request: Request) -> JSONResponse:
         # Check direct payload or nested metadata
         clerk_user_id = payload.get("client_reference_id") or payload.get("metadata", {}).get("client_reference_id")
         
+        # Robust Fallback: Lookup by email if reference ID is dropped by Dodo
+        if not clerk_user_id:
+            customer_data = payload.get("customer", {})
+            user_email = payload.get("customer_email") or customer_data.get("email")
+            if user_email:
+                with db() as connection:
+                    row = connection.execute("SELECT clerk_user_id FROM users WHERE email = ?", (user_email,)).fetchone()
+                    if row:
+                        clerk_user_id = dict(row)["clerk_user_id"]
+                        
         if event_type == "payment.succeeded" and clerk_user_id:
             product_id = payload.get("product_id")
             plan = "none"
