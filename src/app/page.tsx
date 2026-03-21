@@ -157,7 +157,8 @@ export default function Home() {
 
                 // Add to Recents
                 if (currentFileName) {
-                  const recentsStr = localStorage.getItem("cleanclip_recents");
+                  const storageKey = user ? `cleanclip_recents_${user.id}` : "cleanclip_recents";
+                  const recentsStr = localStorage.getItem(storageKey);
                   let stored = recentsStr ? JSON.parse(recentsStr) : [];
                   stored.unshift({
                     name: currentFileName,
@@ -166,7 +167,7 @@ export default function Home() {
                   });
                   // Keep only last 5
                   stored = stored.slice(0, 5);
-                  localStorage.setItem("cleanclip_recents", JSON.stringify(stored));
+                  localStorage.setItem(storageKey, JSON.stringify(stored));
                   window.dispatchEvent(new Event("cleanclip_recents_updated"));
                 }
               }

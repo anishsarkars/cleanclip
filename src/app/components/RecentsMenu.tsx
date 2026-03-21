@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Clock, Download, Trash2, X } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 interface RecentItem {
   name: string;
@@ -13,17 +14,20 @@ export default function RecentsMenu({ theme = "dark" }: { theme?: "dark" | "ligh
   const [isOpen, setIsOpen] = useState(false);
   const [recents, setRecents] = useState<RecentItem[]>([]);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useUser();
+  const storageKey = user ? `cleanclip_recents_${user.id}` : "cleanclip_recents";
 
   const loadRecents = () => {
+    if (!user) return; // Optional safety, it is usually only rendered when user exists
     try {
-      const recentsStr = localStorage.getItem("cleanclip_recents");
+      const recentsStr = localStorage.getItem(storageKey);
       let stored: RecentItem[] = recentsStr ? JSON.parse(recentsStr) : [];
       // Clean up older than 5 days
       const fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
       const now = Date.now();
       const filtered = stored.filter(r => now - r.timestamp < fiveDaysMs);
       if (filtered.length !== stored.length) {
-        localStorage.setItem("cleanclip_recents", JSON.stringify(filtered));
+        localStorage.setItem(storageKey, JSON.stringify(filtered));
       }
       setRecents(filtered);
     } catch {
@@ -39,7 +43,7 @@ export default function RecentsMenu({ theme = "dark" }: { theme?: "dark" | "ligh
   }, []);
 
   const clearRecents = () => {
-    localStorage.removeItem("cleanclip_recents");
+    localStorage.removeItem(storageKey);
     setRecents([]);
     setIsOpen(false);
   };
