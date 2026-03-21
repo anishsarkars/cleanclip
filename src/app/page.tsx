@@ -122,7 +122,7 @@ export default function Home() {
   }, [stopPolling]);
 
   const pollStatus = useCallback(
-    (jobId: string) => {
+    (jobId: string, currentFileName?: string) => {
       stopPolling();
       pollRef.current = setInterval(async () => {
         try {
@@ -156,11 +156,11 @@ export default function Home() {
                 setProcessedUrl(url);
 
                 // Add to Recents
-                if (selectedFile) {
+                if (currentFileName) {
                   const recentsStr = localStorage.getItem("cleanclip_recents");
                   let stored = recentsStr ? JSON.parse(recentsStr) : [];
                   stored.unshift({
-                    name: selectedFile.name,
+                    name: currentFileName,
                     url: url,
                     timestamp: Date.now()
                   });
@@ -232,7 +232,7 @@ export default function Home() {
             const data = JSON.parse(xhr.responseText);
             setStep("Ready to process...");
             setProgress(30);
-            pollStatus(data.job_id);
+            pollStatus(data.job_id, file.name);
           } else {
             let errorDetail = "Upload failed.";
             try {

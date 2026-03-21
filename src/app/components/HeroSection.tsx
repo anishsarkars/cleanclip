@@ -79,15 +79,15 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
       {/* 🌫️ Constant High-Quality Overflow Transition to White */}
       <div className="absolute inset-x-0 bottom-0 h-[450px] bg-gradient-to-t from-white via-white/100 to-transparent pointer-events-none z-10" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center translate-y-[-60px] md:translate-y-[-110px]">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center translate-y-[-20px] md:translate-y-[-85px]">
 
         <h1
-          className="mb-8 text-white text-4xl md:text-8xl lg:text-5xl font-bold tracking-[-0.03em] leading-tight animate-fade-in shadow-text"
+          className="mb-6 px-10 md:px-0 text-white text-[3px] md:text-5xl lg:text-7xl font-bold tracking-tighter leading-[1.1] animate-fade-in shadow-text"
         >
           Remove video background in seconds.
         </h1>
 
-        <p className="mb-14 max-w-[520px] text-[16px] font-medium text-white/50 md:text-[20px] leading-relaxed animate-fade-in delay-100 shadow-subtext">
+        <p className="mb-12 max-w-[520px] px-6 md:px-0 text-[16px] md:text-[20px] font-medium text-white/60 leading-relaxed animate-fade-in delay-100 shadow-subtext">
           Clean your video or gif backgrounds with AI.
         </p>
 
