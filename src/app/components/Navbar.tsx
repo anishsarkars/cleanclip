@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { UserButton, useClerk, useUser } from "@clerk/nextjs";
 import Logo from "./Logo";
-import { Crown, Star } from "lucide-react";
+import { Crown, Star, Menu, X } from "lucide-react";
 import RecentsMenu from "./RecentsMenu";
+import { useState } from "react";
 
 interface NavbarProps {
   userPlan?: string;
@@ -14,6 +15,7 @@ interface NavbarProps {
 export default function Navbar({ userPlan, theme = "dark" }: NavbarProps) {
   const { user, isLoaded } = useUser();
   const { openSignIn } = useClerk();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (!isLoaded) return null;
 
@@ -32,9 +34,11 @@ export default function Navbar({ userPlan, theme = "dark" }: NavbarProps) {
       <div className="flex items-center gap-4">
         {user ? (
           <>
-            <RecentsMenu theme={theme} />
+            <div className="hidden sm:block">
+              <RecentsMenu theme={theme} />
+            </div>
             {(userPlan === "pro" || userPlan === "lifetime") && (
-              <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${userPlan === "lifetime"
+              <div className={`hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${userPlan === "lifetime"
                 ? "bg-amber-500/10 border-amber-500/30 text-amber-500"
                 : "bg-blue-500/10 border-blue-500/30 text-blue-500"
                 }`}>
@@ -53,7 +57,53 @@ export default function Navbar({ userPlan, theme = "dark" }: NavbarProps) {
             Login
           </button>
         )}
+        
+        {/* Hamburger Button */}
+        <button 
+          onClick={() => setMobileMenuOpen(true)}
+          className={`lg:hidden p-2 transition-colors ${theme === "light" ? "text-black/70 hover:text-black" : "text-white/70 hover:text-white"}`}
+        >
+          <Menu className="w-6 h-6" />
+        </button>
       </div>
+
+      {/* Mobile Slide-Over Overlay */}
+      {mobileMenuOpen && (
+        <div className={`fixed inset-0 z-[100] animate-fade-in lg:hidden ${theme === "light" ? "bg-white/95 text-zinc-950" : "bg-black/95 text-white"}`}>
+           <div className="p-6 md:px-12 py-8 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Logo className="h-10 w-10" color={theme === "light" ? "black" : "white"} />
+                <span className="font-bold tracking-tighter text-[22px]">CleanClip</span>
+              </div>
+              <button 
+                onClick={() => setMobileMenuOpen(false)}
+                className={`p-2 transition-colors ${theme === "light" ? "text-black/70 hover:text-black" : "text-white/70 hover:text-white"}`}
+              >
+                <X className="w-6 h-6" />
+              </button>
+           </div>
+           
+           <div className="flex flex-col items-center justify-center gap-10 mt-20">
+              <Link 
+                href="#how-it-works" 
+                onClick={() => setMobileMenuOpen(false)}
+                className={`text-[32px] font-black uppercase tracking-[0.2em] transition-all no-underline ${theme === "light" ? "text-black/40 hover:text-black" : "text-white/50 hover:text-white"}`}
+              >
+                How it Works
+              </Link>
+              <Link 
+                href="#pricing" 
+                onClick={() => setMobileMenuOpen(false)}
+                className={`text-[32px] font-black uppercase tracking-[0.2em] transition-all no-underline ${theme === "light" ? "text-black/40 hover:text-black" : "text-white/50 hover:text-white"}`}
+              >
+                Pricing
+              </Link>
+              <div className="flex items-center gap-6 mt-10">
+                 {user ? <RecentsMenu theme={theme} /> : <button onClick={() => { openSignIn(); setMobileMenuOpen(false); }} className={`text-[18px] font-bold ${theme === "light" ? "text-black" : "text-white"}`}>Login</button>}
+              </div>
+           </div>
+        </div>
+      )}
     </nav>
   );
 }

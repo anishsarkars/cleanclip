@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload, ChevronDown, Crown, Star } from "lucide-react";
+import { Upload, ChevronDown, Crown, Star, Menu, X } from "lucide-react";
 import Logo from "./Logo";
 import Link from "next/link";
 import { useUser, useClerk, UserButton } from "@clerk/nextjs";
@@ -22,6 +22,7 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
 
   const { user } = useUser();
   const { openSignIn } = useClerk();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const validate = (file: File) => {
     if (!ACCEPTED.includes(file.type)) return "Use MP4, MOV, GIF, or WebM.";
@@ -86,9 +87,11 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
           <div className="flex items-center gap-4">
             {user ? (
               <>
-                <RecentsMenu theme="dark" />
+                <div className="hidden sm:block">
+                   <RecentsMenu theme="dark" />
+                </div>
                 {(userPlan === "pro" || userPlan === "lifetime") && (
-                  <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${userPlan === "lifetime"
+                  <div className={`hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${userPlan === "lifetime"
                     ? "bg-amber-500/10 border-amber-500/30 text-amber-500"
                     : "bg-blue-500/10 border-blue-500/30 text-blue-500"
                     }`}>
@@ -101,9 +104,55 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
             ) : (
               <button onClick={() => openSignIn()} className="text-[14px] font-bold text-white/50 hover:text-white transition-colors">Login</button>
             )}
+
+            {/* Hamburger Button */}
+            <button 
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 text-white/70 hover:text-white transition-colors"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
           </div>
         </div>
       </nav>
+
+      {/* Mobile Slide-Over Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/95 animate-fade-in md:hidden">
+           <div className="p-6 md:px-12 py-8 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Logo className="h-10 w-10 text-white" color="white" />
+                <span className="font-bold tracking-tighter text-[22px]">CleanClip</span>
+              </div>
+              <button 
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 text-white/70 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+           </div>
+           
+           <div className="flex flex-col items-center justify-center gap-10 mt-20">
+              <a 
+                href="#how-it-works" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-[32px] font-black uppercase tracking-[0.2em] text-white/50 hover:text-white transition-all"
+              >
+                How it Works
+              </a>
+              <a 
+                href="#pricing" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-[32px] font-black uppercase tracking-[0.2em] text-white/50 hover:text-white transition-all"
+              >
+                Pricing
+              </a>
+              <div className="flex items-center gap-6 mt-10">
+                 {user ? <RecentsMenu theme="dark" /> : <button onClick={() => { openSignIn(); setMobileMenuOpen(false); }} className="text-[18px] font-bold text-white">Login</button>}
+              </div>
+           </div>
+        </div>
+      )}
 
       {/* Hero Content */}
       <div className="relative z-20 flex w-full flex-col items-center pt-[60px] md:pt-[90px] pb-[60px] md:pb-[120px] px-4 md:px-6">
