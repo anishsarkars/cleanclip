@@ -25,7 +25,7 @@ export default function Navbar({ userPlan, theme = "dark" }: NavbarProps) {
       </Link>
 
       <div className={`hidden lg:flex gap-10 text-[14px] font-black uppercase tracking-[0.2em] ${theme === "light" ? "text-black/40" : "text-white/40"}`}>
-        <Link href="#how-it-works" className={`transition-colors no-underline ${theme === "light" ? "hover:text-black" : "hover:text-white"}`}>Works</Link>
+        <Link href="#how-it-works" className={`transition-colors no-underline ${theme === "light" ? "hover:text-black" : "hover:text-white"}`}>How it Works</Link>
         <Link href="#pricing" className={`transition-colors no-underline ${theme === "light" ? "hover:text-black" : "hover:text-white"}`}>Pricing</Link>
       </div>
 
@@ -34,11 +34,10 @@ export default function Navbar({ userPlan, theme = "dark" }: NavbarProps) {
           <>
             <RecentsMenu theme={theme} />
             {(userPlan === "pro" || userPlan === "lifetime") && (
-              <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${
-                userPlan === "lifetime" 
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-500" 
-                  : "bg-blue-500/10 border-blue-500/30 text-blue-500"
-              }`}>
+              <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${userPlan === "lifetime"
+                ? "bg-amber-500/10 border-amber-500/30 text-amber-500"
+                : "bg-blue-500/10 border-blue-500/30 text-blue-500"
+                }`}>
                 {userPlan === "lifetime" ? <Crown className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
                 {userPlan}
               </div>

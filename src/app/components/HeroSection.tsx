@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload, ArrowRight } from "lucide-react";
+import { Upload, ChevronDown } from "lucide-react";
+import Logo from "./Logo";
+import Link from "next/link";
+import { useUser, useClerk, UserButton } from "@clerk/nextjs";
 
 interface HeroSectionProps {
   onFileSelected: (file: File) => void;
@@ -16,10 +19,12 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const { user } = useUser();
+  const { openSignIn } = useClerk();
+
   const validate = (file: File) => {
     if (!ACCEPTED.includes(file.type)) return "Use MP4, MOV, GIF, or WebM.";
 
-    // Determine limit
     const isPro = userPlan === "pro" || userPlan === "lifetime";
     const limitMB = isPro ? 100 : 50;
     const limitBytes = limitMB * 1024 * 1024;
@@ -34,65 +39,85 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
       setError(nextError);
       if (!nextError) onFileSelected(file);
     },
-    [onFileSelected],
+    [onFileSelected]
   );
 
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pb-60 pt-40 md:pt-60">
-      {/* 🌌 Cinematic OLED Pure Black to Blue Gradient */}
-      <div className="absolute inset-0 bg-[#000000] -z-30" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#000000]/80 via-[#1E293B]/40 to-[#2563EB]/40 -z-20" />
+    <section
+      className="relative flex flex-col items-center justify-start overflow-hidden bg-black text-white w-full rounded-b-[48px] md:rounded-b-[80px] shadow-2xl"
+      style={{ fontFamily: "'General Sans', sans-serif" }}
+    >
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 h-full w-full object-cover z-0 pointer-events-none"
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260217_030345_246c0224-10a4-422c-b324-070b7c0eceda.mp4"
+      />
 
-      {/* ☁️ Multi-Layer High-Definition Cloud Orchestration (Enhanced Visibility) */}
-      <div className="absolute inset-x-0 bottom-0 h-[800px] pointer-events-none z-0">
-        {/* Layer 1: Atmospheric Deep Drift */}
+      {/* 50% Black Overlay */}
+      <div className="absolute inset-0 h-full bg-black/50 z-10 pointer-events-none" />
+
+      {/* Navbar Content */}
+      <nav className="relative z-20 flex w-full items-center justify-between px-6 md:px-[120px] py-[20px]">
+        {/* Left Side: CleanClip Logo restored */}
         <div
-          className="absolute bottom-[-50px] left-[-30%] right-[-30%] h-full bg-cover bg-bottom animate-cloud-drift opacity-60 mix-blend-screen scale-110"
-          style={{
-            backgroundImage: `url('/bg-clouds-photo.png')`,
-            maskImage: 'linear-gradient(to top, black 40%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 40%, transparent 100%)'
-          }}
-        />
-        {/* Layer 2: Ethereal Floating Mass */}
-        <div
-          className="absolute bottom-[-100px] left-[-20%] right-[-20%] h-full bg-cover bg-bottom animate-cloud-float-slow opacity-80 mix-blend-screen"
-          style={{
-            backgroundImage: `url('/bg-clouds-photo.png')`,
-            maskImage: 'linear-gradient(to top, black 30%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 30%, transparent 100%)'
-          }}
-        />
-        {/* Layer 3: Central High-Quality Base */}
-        <div
-          className="absolute bottom-[-150px] left-[-10%] right-[-10%] h-full bg-cover bg-bottom animate-cloud-pulse opacity-95"
-          style={{
-            backgroundImage: `url('/bg-clouds-photo.png')`,
-            maskImage: 'linear-gradient(to top, black 20%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 20%, transparent 100%)'
-          }}
-        />
-        {/* Layer 4: Soft Ambient Bloom */}
-        <div className="absolute bottom-[-200px] left-[-15%] right-[-15%] h-[600px] bg-white blur-[140px] rounded-full opacity-60 mix-blend-overlay animate-pulse" />
-      </div>
-
-      {/* 🌫️ Constant High-Quality Overflow Transition to White */}
-      <div className="absolute inset-x-0 bottom-0 h-[450px] bg-gradient-to-t from-white via-white/100 to-transparent pointer-events-none z-10" />
-
-      <div className="relative z-10 mx-auto flex w-full max-w-[1100px] flex-col items-center text-center translate-y-[-20px] md:translate-y-[-85px]">
-
-        <h1
-          className="mb-6 px-4 md:px-0 text-white text-[44px] md:text-6xl lg:text-7xl font-black tracking-tighter leading-[1.1] animate-fade-in shadow-text"
+          className="flex items-center gap-3 cursor-pointer group"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
-          Remove video background in seconds.
-        </h1>
+          <Logo className="h-10 w-10 text-white group-hover:scale-105 transition-transform" color="white" />
+          <span className="font-bold tracking-tighter text-[22px] md:text-[24px] group-hover:opacity-80 transition-opacity">CleanClip</span>
+        </div>
 
-        <p className="mb-12 max-w-[520px] px-6 md:px-0 text-[16px] md:text-[20px] font-medium text-white/60 leading-relaxed animate-fade-in delay-100 shadow-subtext">
-          Clean your video or gif backgrounds with AI.
-        </p>
+        <div className="flex items-center gap-8 md:gap-12">
+          {/* Main Links */}
+          <div className="hidden md:flex items-center space-x-[30px]">
+            <a href="#how-it-works" className="cursor-pointer group">
+              <span className="text-[14px] font-medium text-white/50 hover:text-white transition-colors">How it Works</span>
+            </a>
+            <a href="#pricing" className="cursor-pointer group">
+              <span className="text-[14px] font-medium text-white/50 hover:text-white transition-colors">Pricing</span>
+            </a>
+          </div>
 
-        {/* The Defined Black-Border Upload Card */}
-        <div className="w-full max-w-[780px] animate-fade-in delay-200">
+          {/* Fallback Authentication */}
+          <div className="flex items-center">
+            {user ? <UserButton /> : <button onClick={() => openSignIn()} className="text-[14px] font-bold text-white/50 hover:text-white transition-colors">Login</button>}
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Content */}
+      <div className="relative z-20 flex w-full flex-col items-center pt-[60px] md:pt-[90px] pb-[60px] md:pb-[120px] px-4 md:px-6">
+        <div className="flex flex-col items-center gap-[24px] md:gap-[40px] w-full">
+
+          {/* Heading restored to original CleanClip phrasing */}
+          <h1
+            className="max-w-[800px] text-center text-[36px] sm:text-[44px] md:text-[64px] font-medium leading-[1.1] tracking-tight animate-fade-in delay-100"
+            style={{
+              background: "linear-gradient(144.5deg, #ffffff 28%, rgba(0,0,0,0) 115%)",
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              color: "transparent"
+            }}
+          >
+            Remove video background in seconds.
+          </h1>
+
+          {/* Subtitle restored */}
+          <p className="max-w-[500px] text-center text-[16px] md:text-[20px] font-normal leading-relaxed text-white/70 animate-fade-in delay-200 mt-0 md:mt-[-16px]">
+            Clean your video or gif backgrounds with AI.
+          </p>
+
+        </div>
+
+        {/* ------------------------------------------------------------- 
+             Functional Upload Component
+             ------------------------------------------------------------- */}
+        <div className="w-full max-w-[780px] mt-16 animate-fade-in delay-300 relative z-30">
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -106,23 +131,18 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
               if (file) handleFile(file);
             }}
             onClick={() => inputRef.current?.click()}
-            className={`group min-h-[320px] md:min-h-[460px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[48px] md:rounded-[64px] border-[1.5px] transition-all duration-700 hover:scale-[1.002] shadow-[0_80px_160px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-12 md:py-16 px-6 md:px-8 ${isDragging
-              ? "border-white bg-white/20"
-              : "border-black/5 hover:border-black/20 hover:bg-white/10"
+            className={`group min-h-[280px] md:min-h-[400px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[48px] border-[1.5px] transition-all duration-700 hover:scale-[1.01] shadow-[0_80px_160px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-12 md:py-16 px-6 md:px-8 ${isDragging ? "border-white bg-white/20" : "border-white/10 hover:border-white/40"
               }`}
           >
-            <div className="mb-10 md:mb-12 flex h-20 w-20 md:h-24 md:w-24 items-center justify-center bg-white/5 rounded-[32px] md:rounded-[40px] border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+            <div className="mb-10 md:mb-12 flex h-20 w-20 md:h-24 md:w-24 items-center justify-center bg-white/5 rounded-[32px] border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
               <Upload className="w-10 h-10 md:w-12 md:h-12 text-white" strokeWidth={1} />
             </div>
 
-            <h2 className="mb-3 text-[28px] md:text-[38px] font-black tracking-tighter text-white shadow-text">
+            <h2 className="mb-3 text-[28px] md:text-[36px] font-bold text-white shadow-text text-center">
               Drag & Drop to upload
             </h2>
-            <p className="text-white font-bold text-lg md:text-xl shadow-subtext opacity-50">
-              or <span className="underline decoration-white/40 underline-offset-8 hover:opacity-100 transition-all">browse files</span>
-            </p>
-            <p className="mt-10 md:mt-14 text-white/20 text-[10px] md:text-[12px] font-black uppercase tracking-[0.3em] shadow-subtext">
-              MP4, MOV, GIF (MAX. {userPlan === "pro" || userPlan === "lifetime" ? "100MB" : "50MB"})
+            <p className="text-white/80 font-medium text-[16px] md:text-[18px]">
+              or <span className="underline decoration-white/40 underline-offset-4 hover:opacity-100 transition-all">browse files</span>
             </p>
 
             <input
@@ -135,43 +155,26 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
               }}
               className="hidden"
             />
+
+            <p className="mt-10 md:mt-14 text-white/50 text-[10px] md:text-[12px] font-bold uppercase tracking-[0.3em]">
+              MP4, MOV, GIF (MAX. {userPlan === "pro" || userPlan === "lifetime" ? "100MB" : "50MB"})
+            </p>
           </div>
 
           {error && (
-            <div className="animate-fade-in mt-8 rounded-[32px] border border-red-200/50 bg-white/95 p-6 text-center text-sm font-black text-red-600 backdrop-blur-3xl shadow-2xl">
+            <div className="animate-fade-in mt-6 rounded-[24px] border border-red-500/30 bg-black/60 backdrop-blur-md p-4 text-center text-[14px] font-medium text-red-400 max-w-[500px] mx-auto">
               {error}
             </div>
           )}
-
           {helperText && !error && (
-            <div className="animate-fade-in mt-16 text-sm font-black text-white uppercase tracking-[0.3em] shadow-subtext opacity-30">
+            <div className="animate-fade-in mt-8 text-[12px] font-bold text-white/40 uppercase tracking-[0.2em] text-center">
               {helperText}
             </div>
           )}
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes cloud-drift {
-          0% { transform: translateX(0) translateY(0) scale(1.1) rotate(0deg); opacity: 0.5; filter: blur(2px); }
-          33% { transform: translateX(5%) translateY(-10px) scale(1.15) rotate(1deg); opacity: 0.7; filter: blur(0px); }
-          66% { transform: translateX(-2%) translateY(5px) scale(1.12) rotate(-0.5deg); opacity: 0.6; filter: blur(4px); }
-          100% { transform: translateX(0) translateY(0) scale(1.1) rotate(0deg); opacity: 0.5; filter: blur(2px); }
-        }
-        @keyframes cloud-float-slow {
-          0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.7; }
-          50% { transform: translateY(-40px) translateX(3%) scale(1.05) rotate(0.5deg); opacity: 0.9; }
-          100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.7; }
-        }
-        @keyframes cloud-pulse {
-          0% { opacity: 0.85; transform: translateY(0) scale(1); filter: brightness(1); }
-          50% { opacity: 1.0; transform: translateY(-20px) scale(1.02) filter: brightness(1.2); }
-          100% { opacity: 0.85; transform: translateY(0) scale(1) filter: brightness(1); }
-        }
-        .animate-cloud-drift { animation: cloud-drift 45s ease-in-out infinite; }
-        .animate-cloud-float-slow { animation: cloud-float-slow 35s ease-in-out infinite; }
-        .animate-cloud-pulse { animation: cloud-pulse 25s ease-in-out infinite; }
-      `}</style>
     </section>
   );
 }
+

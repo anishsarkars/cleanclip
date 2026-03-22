@@ -2,9 +2,9 @@
 
 export default function PromoBanner() {
   return (
-    <div className="relative z-[100] w-full bg-black/95 text-white/50 border-b border-white/5 py-1.5 px-6 flex items-center justify-center animate-fade-in transition-all">
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[9px] font-bold uppercase tracking-[0.1em]">
-        <span className="opacity-80 whitespace-nowrap">launch day - Need free credits or query?</span>
+    <div className="relative z-[100] w-full bg-black/95 text-white/50 border-b border-white/5 py-2 md:py-1.5 px-4 md:px-6 flex items-center justify-center animate-fade-in transition-all">
+      <div className="flex flex-wrap items-center justify-center text-center gap-x-4 gap-y-2 text-[9px] font-bold uppercase tracking-[0.1em]">
+        <span className="opacity-80">Wanted more free credits or query?</span>
         <div className="flex items-center gap-3">
           <a
             href="https://linkedin.com/in/anishsarkar-"

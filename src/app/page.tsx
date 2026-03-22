@@ -364,12 +364,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] font-sans">
-      {appState === "idle" && <PromoBanner />}
       <div className="p-0">
-        <div className="relative overflow-hidden bg-black rounded-none">
+        <div className="relative rounded-none">
           
           {/* Immersive Cleanup: Hide Nav during critical processing to focus on the 'Clean UI' */}
-          {appState !== "processing" && <Navbar userPlan={userInfo?.plan} theme={appState === "result" ? "light" : "dark"} />}
+          {appState !== "processing" && appState !== "idle" && <Navbar userPlan={userInfo?.plan} theme={appState === "result" ? "light" : "dark"} />}
 
           {/* 🔔 Premium Notification Toast */}
           {notification && (
@@ -405,7 +404,7 @@ export default function Home() {
               <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} userPlan={userInfo?.plan} />
               
               {/* Unified White Background Container */}
-              <div className="relative z-10 bg-white">
+              <div className="relative z-10 bg-white mt-12 md:mt-24 rounded-[32px] md:rounded-[48px] overflow-hidden shadow-sm border border-black/5 mx-2 md:mx-6 mb-6">
                  <div className="space-y-0">
                    <HowItWorks />
                    <PricingSection onUpgrade={handlePlanSelection} />
