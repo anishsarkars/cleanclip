@@ -798,8 +798,13 @@ async def dodo_webhook(request: Request) -> JSONResponse:
                     if row:
                         clerk_user_id = dict(row)["clerk_user_id"]
                         
-        if event_type == "payment.succeeded" and clerk_user_id:
-            product_id = payload.get("product_id")
+        # Dodo can send 'payment.succeeded', 'subscription.created', or 'order.completed'
+        valid_events = {"payment.succeeded", "subscription.created", "order.completed"}
+        if event_type in valid_events and clerk_user_id:
+            # Fallback for product_id location
+            product_data = payload.get("product") or {}
+            product_id = payload.get("product_id") or product_data.get("product_id") or payload.get("plan_id")
+            
             plan = "none"
             credits_to_add = 0
             
@@ -813,7 +818,7 @@ async def dodo_webhook(request: Request) -> JSONResponse:
                 credits_to_add = 99999
                 
             if plan != "none":
-                email = payload.get("customer_email", "paid@user.com")
+                email = payload.get("customer_email") or customer_data.get("email") or "paid@user.com"
                 now = now_iso()
                 
                 with db() as connection:
@@ -823,7 +828,10 @@ async def dodo_webhook(request: Request) -> JSONResponse:
                         VALUES (?, ?, ?, ?, 1, ?, ?, ?)
                         ON CONFLICT(clerk_user_id) DO UPDATE SET
                             plan = excluded.plan,
-                            credits_remaining = credits_remaining + excluded.credits_remaining,
+                            credits_remaining = CASE 
+                                WHEN excluded.plan = 'lifetime' THEN 99999 
+                                ELSE credits_remaining + excluded.credits_remaining 
+                            END,
                             has_onboarded = 1,
                             updated_at = excluded.updated_at
                         """,

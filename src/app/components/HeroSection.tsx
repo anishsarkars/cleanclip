@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { Upload, ChevronDown } from "lucide-react";
+import { Upload, ChevronDown, Crown, Star } from "lucide-react";
 import Logo from "./Logo";
 import Link from "next/link";
 import { useUser, useClerk, UserButton } from "@clerk/nextjs";
+import RecentsMenu from "./RecentsMenu";
 
 interface HeroSectionProps {
   onFileSelected: (file: File) => void;
@@ -71,7 +72,7 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
           <span className="font-bold tracking-tighter text-[22px] md:text-[24px] group-hover:opacity-80 transition-opacity">CleanClip</span>
         </div>
 
-        <div className="flex items-center gap-8 md:gap-12">
+        <div className="flex items-center gap-6 md:gap-10">
           {/* Main Links */}
           <div className="hidden md:flex items-center space-x-[30px]">
             <a href="#how-it-works" className="cursor-pointer group">
@@ -82,9 +83,24 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
             </a>
           </div>
 
-          {/* Fallback Authentication */}
-          <div className="flex items-center">
-            {user ? <UserButton /> : <button onClick={() => openSignIn()} className="text-[14px] font-bold text-white/50 hover:text-white transition-colors">Login</button>}
+          <div className="flex items-center gap-4">
+            {user ? (
+              <>
+                <RecentsMenu theme="dark" />
+                {(userPlan === "pro" || userPlan === "lifetime") && (
+                  <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${userPlan === "lifetime"
+                    ? "bg-amber-500/10 border-amber-500/30 text-amber-500"
+                    : "bg-blue-500/10 border-blue-500/30 text-blue-500"
+                    }`}>
+                    {userPlan === "lifetime" ? <Crown className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
+                    {userPlan}
+                  </div>
+                )}
+                <UserButton />
+              </>
+            ) : (
+              <button onClick={() => openSignIn()} className="text-[14px] font-bold text-white/50 hover:text-white transition-colors">Login</button>
+            )}
           </div>
         </div>
       </nav>

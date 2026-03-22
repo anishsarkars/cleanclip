@@ -79,10 +79,20 @@ export default function Home() {
     if (params.get("success") === "true") {
       setNotification({
         type: "success",
-        message: "Payment successfully! Please be patient, your credits will be active in under 4 hours (usually instant)."
+        message: "Payment successful! Your credits are being activated now (usually instant)."
       });
       // Clear URL params
       window.history.replaceState({}, document.title, window.location.pathname);
+
+      // 💳 Rapid Sync: Poll for 10 seconds to catch the webhook update
+      let attempts = 0;
+      const interval = setInterval(async () => {
+        attempts++;
+        if (attempts > 5) clearInterval(interval);
+        try {
+          await syncUser();
+        } catch (e) { console.error("Sync error:", e); }
+      }, 2000);
     }
 
     if (!user) {
