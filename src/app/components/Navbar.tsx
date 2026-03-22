@@ -9,10 +9,11 @@ import { useState } from "react";
 
 interface NavbarProps {
   userPlan?: string;
+  creditsRemaining?: number;
   theme?: "dark" | "light";
 }
 
-export default function Navbar({ userPlan, theme = "dark" }: NavbarProps) {
+export default function Navbar({ userPlan, creditsRemaining, theme = "dark" }: NavbarProps) {
   const { user, isLoaded } = useUser();
   const { openSignIn } = useClerk();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -20,7 +21,7 @@ export default function Navbar({ userPlan, theme = "dark" }: NavbarProps) {
   if (!isLoaded) return null;
 
   return (
-    <nav className={`absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-8 md:py-12 animate-fade-in ${theme === "light" ? "text-zinc-950" : "text-white"}`}>
+    <nav className={`absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-[120px] py-6 md:py-[40px] animate-fade-in ${theme === "light" ? "text-zinc-950" : "text-white"}`}>
       <Link href="/" className="flex items-center gap-3 no-underline group">
         <Logo className="h-10 w-10 group-hover:scale-110 transition-transform duration-500" color={theme === "light" ? "black" : "white"} />
         <span className="font-bold tracking-tighter text-[22px] md:text-[24px]">CleanClip</span>
@@ -37,15 +38,27 @@ export default function Navbar({ userPlan, theme = "dark" }: NavbarProps) {
             <div className="hidden sm:block">
               <RecentsMenu theme={theme} />
             </div>
-            {(userPlan === "pro" || userPlan === "lifetime") && (
-              <div className={`hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${userPlan === "lifetime"
-                ? "bg-amber-500/10 border-amber-500/30 text-amber-500"
-                : "bg-blue-500/10 border-blue-500/30 text-blue-500"
+            
+            <div className="flex flex-col items-end mr-1">
+              {/* Plan Badge */}
+              {(userPlan === "pro" || userPlan === "lifetime" || userPlan === "free") && (
+                <div className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest shadow-sm mb-1 ${
+                  userPlan === "lifetime" ? "bg-amber-500/10 border-amber-500/30 text-amber-500" : 
+                  userPlan === "pro" ? "bg-blue-500/10 border-blue-500/30 text-blue-500" :
+                  "bg-zinc-500/10 border-zinc-500/20 text-zinc-400"
                 }`}>
-                {userPlan === "lifetime" ? <Crown className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
-                {userPlan}
-              </div>
-            )}
+                  {userPlan === "lifetime" ? <Crown className="w-2.5 h-2.5" /> : <Star className="w-2.5 h-2.5" />}
+                  {userPlan}
+                </div>
+              )}
+              {/* Credits Mirroring Hero Section visibility */}
+              {creditsRemaining !== undefined && (
+                <span className={`text-[10px] font-bold uppercase tracking-[0.1em] opacity-40 hidden sm:block`}>
+                  {creditsRemaining} Credits
+                </span>
+              )}
+            </div>
+            
             <UserButton />
           </>
         ) : (

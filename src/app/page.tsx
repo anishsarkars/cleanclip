@@ -378,7 +378,13 @@ export default function Home() {
         <div className="relative rounded-none">
           
           {/* Immersive Cleanup: Hide Nav during critical processing to focus on the 'Clean UI' */}
-          {appState !== "processing" && appState !== "idle" && <Navbar userPlan={userInfo?.plan} theme={appState === "result" ? "light" : "dark"} />}
+          {appState !== "processing" && appState !== "idle" && (
+            <Navbar 
+              userPlan={userInfo?.plan} 
+              creditsRemaining={userInfo?.credits_remaining}
+              theme={appState === "result" ? "light" : "dark"} 
+            />
+          )}
 
           {/* 🔔 Premium Notification Toast */}
           {notification && (

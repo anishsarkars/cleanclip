@@ -24,6 +24,9 @@ import hashlib
 import hmac
 import imageio_ffmpeg
 import json
+import numpy as np
+import io
+import base64
 
 load_dotenv()
 
@@ -403,7 +406,9 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
             "-auto-alt-ref", "0",
             "-crf", "40", 
             "-deadline", "realtime", 
-            "-preset", "ultrafast",
+            "-cpu-used", "8", # 0-8, higher is faster
+            "-row-mt", "1",   # Multi-threading optimization
+            "-threads", "0",  # Auto-select threads
             "-b:v", "0",
             "-metadata:s:v:0", "alpha_mode=1",
             str(temp_output),
@@ -434,58 +439,95 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                         except:
                             rembg_session = new_session("u2net")
 
-            def _process_single_frame(frm, f_idx):
-                if frm.shape[1] != meta.width or frm.shape[0] != meta.height:
-                    frm = cv2.resize(frm, (meta.width, meta.height))
+            # Performance optimizations
+            subsample = 1
+            if meta.fps > 45: subsample = 3
+            elif meta.fps > 23: subsample = 2
+            
+            # Pre-calculate processing resolution (240 is ~1.8x faster than 320, still clean)
+            proc_h = 240
+            proc_w = int(240 * (meta.width / meta.height))
+            if proc_w % 2 != 0: proc_w -= 1
+            
+            print(f"🚀 Speed Optimizing: Resolution={proc_w}x{proc_h}, Subsampling=1/{subsample}")
 
-                proc_h, proc_w = 320, int(320 * (meta.width / meta.height))
-                proc_frame = cv2.resize(frm, (proc_w, proc_h))
-                proc_rgb = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2RGB)
-                
-                mask = remove(proc_rgb, session=rembg_session, only_mask=True, post_process_mask=False)
-                full_mask = cv2.resize(mask, (meta.width, meta.height), interpolation=cv2.INTER_LINEAR)
-                
+            def _process_single_frame(frm, f_idx, prev_mask=None):
+                # Always resize to the target size for the final video output
+                if frm.shape[1] != meta.width or frm.shape[0] != meta.height:
+                    frm = cv2.resize(frm, (meta.width, meta.height), interpolation=cv2.INTER_LINEAR)
+
+                # Convert to RGB (rembg expects RGB)
                 frame_rgb = cv2.cvtColor(frm, cv2.COLOR_BGR2RGB)
-                import numpy as np
+                
+                # Should we compute a new mask or reuse the previous one?
+                if prev_mask is None or (f_idx % subsample == 0):
+                    # Downscale for performance
+                    proc_frame = cv2.resize(frm, (proc_w, proc_h), interpolation=cv2.INTER_AREA)
+                    proc_rgb = cv2.cvtColor(proc_frame, cv2.COLOR_BGR2RGB)
+                    
+                    # Remove Background (The heavy part)
+                    mask = remove(proc_rgb, session=rembg_session, only_mask=True, post_process_mask=False)
+                    # Upscale mask back to original resolution and smooth edges slightly
+                    full_mask = cv2.resize(mask, (meta.width, meta.height), interpolation=cv2.INTER_LINEAR)
+                    full_mask = cv2.GaussianBlur(full_mask, (3, 3), 0)
+                else:
+                    # Reuse previous mask for incredible speedup
+                    full_mask = prev_mask
+                    mask = None # Only used for thumbnails
+
+                # Combine RGB + Mask
                 rgba_frame = np.dstack((frame_rgb, full_mask))
                 
+                # Thumbnail generation (Efficiently)
                 tb64 = None
                 if f_idx % 60 == 0:
-                    import io, base64
                     thumb_io = io.BytesIO()
-                    proc_rgba = np.dstack((proc_rgb, mask))
+                    # If we didn't compute a mask this frame, compute a small one just for the thumb
+                    if mask is None:
+                        # (This is rarely hit if subsample < 60)
+                        mask = cv2.resize(full_mask, (proc_w, proc_h), interpolation=cv2.INTER_AREA)
+                    
+                    proc_rgba = np.dstack((cv2.resize(frame_rgb, (proc_w, proc_h)), mask))
                     thumb_img = Image.fromarray(proc_rgba).convert("RGBA")
                     thumb_img.save(thumb_io, "WEBP", quality=30)
                     tb64 = f"data:image/webp;base64,{base64.b64encode(thumb_io.getvalue()).decode()}"
                     
-                return rgba_frame.tobytes(), tb64
+                return rgba_frame.tobytes(), full_mask, tb64
 
-            import concurrent.futures
-            import os
-            
-            workers = min(12, (os.cpu_count() or 2) * 2)
+            workers = min(12, os.cpu_count() or 4)
             futures = {}
             next_submit = 0
             next_write = 0
+            last_mask = None
             
             with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
                 while cap.isOpened() or futures:
-                    while cap.isOpened() and len(futures) < workers * 2:
+                    # Feed the pool
+                    while cap.isOpened() and len(futures) < workers * 1.5:
                         ret, frame = cap.read()
                         if not ret:
                             cap.release()
-                            if next_submit == 0:
-                                raise RuntimeError("Failed to read any frames from the video.")
                             break
-                        futures[next_submit] = pool.submit(_process_single_frame, frame, next_submit)
+                        
+                        # Note: We can only pass last_mask if we process sequentially or if we accept "lagging" masks
+                        # To keep it truly parallel, we compute masks for specific frames and 
+                        # just pass the frame index. Actually, we can reuse the mask from the LAST FINISHED frame.
+                        futures[next_submit] = pool.submit(_process_single_frame, frame, next_submit, last_mask)
                         next_submit += 1
                         
+                    # Write results
                     if next_write in futures:
                         if futures[next_write].done():
                             try:
                                 if process.poll() is not None:
                                     raise RuntimeError("FFmpeg process exited prematurely.")
-                                frame_bytes, thumb_b64 = futures[next_write].result()
+                                
+                                frame_bytes, current_mask, thumb_b64 = futures[next_write].result()
+                                
+                                # Update last_mask for subsequent frames
+                                if current_mask is not None:
+                                    last_mask = current_mask
+                                
                                 if process.stdin:
                                     process.stdin.write(frame_bytes)
                                     process.stdin.flush()
@@ -500,7 +542,7 @@ async def _process_job(job_id: str, input_path: Path, owner_user_id: str | None,
                             
                             progress = 30.0 + (next_write / (max(total_frames, next_write) or 1)) * 65.0
                             jobs[job_id].update({
-                                "progress": round(min(progress, 95.0), 2),
+                                "progress": round(min(progress, 98.0), 2),
                                 "step": f"Turbo Cleaning: {next_write}/{total_frames or '?'}"
                             })
                             if next_write % 100 == 0: persist_job(job_id)
@@ -785,8 +827,12 @@ async def dodo_webhook(request: Request) -> JSONResponse:
         event_type = data.get("type")
         payload = data.get("data", {})
         
-        # Check direct payload or nested metadata
-        clerk_user_id = payload.get("client_reference_id") or payload.get("metadata", {}).get("client_reference_id")
+        # Check direct payload, nested metadata, or customer metadata
+        clerk_user_id = (
+            payload.get("client_reference_id") or 
+            payload.get("metadata", {}).get("client_reference_id") or
+            payload.get("customer", {}).get("metadata", {}).get("client_reference_id")
+        )
         
         # Robust Fallback: Lookup by email if reference ID is dropped by Dodo
         if not clerk_user_id:
@@ -797,13 +843,25 @@ async def dodo_webhook(request: Request) -> JSONResponse:
                     row = connection.execute("SELECT clerk_user_id FROM users WHERE email = ?", (user_email,)).fetchone()
                     if row:
                         clerk_user_id = dict(row)["clerk_user_id"]
-                        
+                        print(f"DEBUG: Found clerk_user_id {clerk_user_id} via email {user_email}")
+        
         # Dodo can send 'payment.succeeded', 'subscription.created', or 'order.completed'
-        valid_events = {"payment.succeeded", "subscription.created", "order.completed"}
+        # We also listen for 'subscription.updated' in case of plan changes
+        valid_events = {"payment.succeeded", "subscription.created", "order.completed", "subscription.updated"}
         if event_type in valid_events and clerk_user_id:
-            # Fallback for product_id location
+            # Fallback for product_id location (Dodo structure varies between one-time and sub)
             product_data = payload.get("product") or {}
-            product_id = payload.get("product_id") or product_data.get("product_id") or payload.get("plan_id")
+            plan_data = payload.get("plan") or {}
+            
+            product_id = (
+                payload.get("product_id") or 
+                product_data.get("product_id") or 
+                payload.get("plan_id") or
+                plan_data.get("plan_id") or
+                payload.get("metadata", {}).get("product_id")
+            )
+            
+            print(f"DEBUG: Processing {event_type} for user {clerk_user_id}, Product: {product_id}")
             
             plan = "none"
             credits_to_add = 0
@@ -816,6 +874,8 @@ async def dodo_webhook(request: Request) -> JSONResponse:
             elif product_id == "pdt_0NavKn2G5oln4JN2cMrzM":
                 plan = "lifetime"
                 credits_to_add = 99999
+            else:
+                print(f"⚠️ WEBHOOK WARNING: Unknown product_id: {product_id}")
                 
             if plan != "none":
                 email = payload.get("customer_email") or customer_data.get("email") or "paid@user.com"

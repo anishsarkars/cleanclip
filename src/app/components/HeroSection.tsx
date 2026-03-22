@@ -63,7 +63,7 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
       <div className="absolute inset-0 h-full bg-black/50 z-10 pointer-events-none" />
 
       {/* Navbar Content */}
-      <nav className="relative z-20 flex w-full items-center justify-between px-6 md:px-[120px] py-[20px]">
+      <nav className="relative z-20 flex w-full items-center justify-between px-6 md:px-[120px] py-6 md:py-[40px]">
         {/* Left Side: CleanClip Logo restored */}
         <div
           className="flex items-center gap-3 cursor-pointer group"
@@ -90,15 +90,25 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
                 <div className="hidden sm:block">
                    <RecentsMenu theme="dark" />
                 </div>
-                {(userPlan === "pro" || userPlan === "lifetime") && (
-                  <div className={`hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full border text-[11px] font-black uppercase tracking-widest shadow-lg ${userPlan === "lifetime"
-                    ? "bg-amber-500/10 border-amber-500/30 text-amber-500"
-                    : "bg-blue-500/10 border-blue-500/30 text-blue-500"
+                
+                <div className="flex flex-col items-end mr-1">
+                  {/* Plan Badge */}
+                  {(userPlan === "pro" || userPlan === "lifetime" || userPlan === "free") && (
+                    <div className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest shadow-sm mb-1 ${
+                      userPlan === "lifetime" ? "bg-amber-500/10 border-amber-500/30 text-amber-500" : 
+                      userPlan === "pro" ? "bg-blue-500/10 border-blue-500/30 text-blue-500" :
+                      "bg-white/10 border-white/20 text-white/60"
                     }`}>
-                    {userPlan === "lifetime" ? <Crown className="w-3.5 h-3.5" /> : <Star className="w-3.5 h-3.5" />}
-                    {userPlan}
-                  </div>
-                )}
+                      {userPlan === "lifetime" ? <Crown className="w-2.5 h-2.5" /> : <Star className="w-2.5 h-2.5" />}
+                      {userPlan}
+                    </div>
+                  )}
+                  {/* helperText actually contains the processed credits string from page.tsx */}
+                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/40 hidden sm:block">
+                    Account Active
+                  </span>
+                </div>
+                
                 <UserButton />
               </>
             ) : (
@@ -108,7 +118,7 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
             {/* Hamburger Button */}
             <button 
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 text-white/70 hover:text-white transition-colors"
+              className="lg:hidden p-2 text-white/70 hover:text-white transition-colors"
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -118,7 +128,7 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
 
       {/* Mobile Slide-Over Overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/95 animate-fade-in md:hidden">
+        <div className="fixed inset-0 z-[100] bg-black/95 animate-fade-in lg:hidden">
            <div className="p-6 md:px-12 py-8 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Logo className="h-10 w-10 text-white" color="white" />
@@ -136,14 +146,14 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
               <a 
                 href="#how-it-works" 
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-[32px] font-black uppercase tracking-[0.2em] text-white/50 hover:text-white transition-all"
+                className="text-[32px] font-black uppercase tracking-[0.2em] text-white/50 hover:text-white transition-all no-underline"
               >
                 How it Works
               </a>
               <a 
                 href="#pricing" 
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-[32px] font-black uppercase tracking-[0.2em] text-white/50 hover:text-white transition-all"
+                className="text-[32px] font-black uppercase tracking-[0.2em] text-white/50 hover:text-white transition-all no-underline"
               >
                 Pricing
               </a>
