@@ -12,7 +12,6 @@ import PaywallModal from "./components/PaywallModal";
 import PricingSection from "./components/PricingSection";
 import ProcessingScreen from "./components/ProcessingScreen";
 import ResultSection from "./components/ResultSection";
-import PromoBanner from "./components/PromoBanner";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
