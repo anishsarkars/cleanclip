@@ -1,6 +1,7 @@
 "use client";
 
 import Logo from "./Logo";
+import PromoBanner from "./PromoBanner";
 
 export default function Footer() {
   return (
@@ -20,6 +21,7 @@ export default function Footer() {
           </div>
         </div>
       </footer>
+      <PromoBanner />
     </div>
   );
 }
