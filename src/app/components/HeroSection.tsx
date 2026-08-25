@@ -180,7 +180,7 @@ export default function HeroSection({ onFileSelected, helperText }: HeroSectionP
               if (file) handleFile(file);
             }}
             onClick={() => inputRef.current?.click()}
-            className={`group min-h-[280px] md:min-h-[400px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[48px] border-[1.5px] transition-all duration-700 hover:scale-[1.01] shadow-[0_80px_160px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-12 md:py-16 px-6 md:px-8 ${isDragging ? "border-white bg-white/20" : "border-white/10 hover:border-white/40"
+            className={`group min-h-[280px] md:min-h-[400px] cursor-pointer flex flex-col items-center justify-center bg-white/5 backdrop-blur-[120px] rounded-[32px] md:rounded-[48px] border-[1.5px] transition-all duration-700 hover:scale-[1.01] shadow-[0_80px_160px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.05)] py-12 md:py-16 px-6 md:px-8 ${isDragging ? "border-white bg-white/20" : "border-white/10 hover:border-white/40"
               }`}
           >
             <div className="mb-10 md:mb-12 flex h-20 w-20 md:h-24 md:w-24 items-center justify-center bg-white/5 rounded-[32px] border border-white/20 shadow-inner group-hover:scale-110 transition-transform duration-500">

@@ -334,7 +334,7 @@ export default function Home() {
 
           {appState === "error" && (
             <section className="flex min-h-screen items-center justify-center bg-black px-6">
-              <div className="w-full max-w-xl bg-white/5 border border-white/10 rounded-[64px] p-12 text-center shadow-2xl backdrop-blur-3xl">
+              <div className="w-full max-w-xl bg-white/5 border border-white/10 rounded-[32px] md:rounded-[64px] p-8 md:p-12 text-center shadow-2xl backdrop-blur-3xl">
                 <h2 className="text-4xl font-black mb-4 tracking-tight text-white">Something went wrong</h2>
                 <div className="bg-white/5 p-6 rounded-[24px] mb-10 text-left border border-white/5">
                    <p className="font-mono text-sm leading-7 break-words text-white/50">{errorMsg}</p>
