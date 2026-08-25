@@ -152,22 +152,6 @@ export default function ProcessingScreen({ fileName, progress, step, startTime, 
           </div>
         </div>
 
-        {/* 💎 Pro-Speed Upgrade Module (Low Profile) */}
-        <div className="w-full max-w-[420px] animate-fade-in delay-1000">
-           <button 
-             onClick={onUpgrade}
-             className="group w-full flex items-center justify-between p-6 rounded-[32px] bg-white/[0.03] border border-white/10 hover:bg-white/[0.06] hover:border-white/20 transition-all duration-700 backdrop-blur-3xl"
-           >
-             <div className="flex flex-col text-left">
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Pro Performance</span>
-               <span className="text-[14px] font-medium text-white/80 group-hover:text-white transition-colors">Want it 10x faster?</span>
-             </div>
-             <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-2xl group-hover:bg-blue-600 transition-all shadow-[0_0_20px_rgba(37,99,235,0)] group-hover:shadow-[0_0_20px_rgba(37,99,235,0.3)]">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white">Upgrade</span>
-                <ArrowRight className="w-3 h-3 text-white group-hover:translate-x-1 transition-transform" />
-             </div>
-           </button>
-        </div>
       </div>
 
       <style jsx>{`

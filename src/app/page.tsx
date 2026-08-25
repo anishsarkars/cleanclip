@@ -7,24 +7,16 @@ import Footer from "./components/Footer";
 import HeroSection from "./components/HeroSection";
 import HowItWorks from "./components/HowItWorks";
 import Navbar from "./components/Navbar";
-import OnboardingModal from "./components/OnboardingModal";
-import PaywallModal from "./components/PaywallModal";
-import PricingSection from "./components/PricingSection";
 import ProcessingScreen from "./components/ProcessingScreen";
 import ResultSection from "./components/ResultSection";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 type AppState = "idle" | "processing" | "result" | "error";
-type Plan = "free" | "pro" | "lifetime";
 
 interface UserInfo {
   clerk_user_id: string;
   email: string;
-  plan: "none" | Plan;
-  credits_remaining: number;
-  has_onboarded: number;
-  last_reset_date: string;
 }
 
 export default function Home() {
@@ -46,8 +38,6 @@ export default function Home() {
   const [errorMsg, setErrorMsg] = useState("");
   const [helperText, setHelperText] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [showPaywall, setShowPaywall] = useState(false);
   const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -73,26 +63,6 @@ export default function Home() {
 
   useEffect(() => {
     if (!isLoaded) return;
-    
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("success") === "true") {
-      setNotification({
-        type: "success",
-        message: "Payment successful! Your credits are being activated now (usually instant)."
-      });
-      // Clear URL params
-      window.history.replaceState({}, document.title, window.location.pathname);
-
-      // 💳 Rapid Sync: Poll for 10 seconds to catch the webhook update
-      let attempts = 0;
-      const interval = setInterval(async () => {
-        attempts++;
-        if (attempts > 5) clearInterval(interval);
-        try {
-          await syncUser();
-        } catch (e) { console.error("Sync error:", e); }
-      }, 2000);
-    }
 
     if (!user) {
       setUserInfo(null);
@@ -105,13 +75,7 @@ export default function Home() {
     });
   }, [isLoaded, syncUser, user]);
 
-  const creditLabel = useMemo(() => {
-    if (user && userInfo) {
-      if (userInfo.plan === "none") return "Choose a plan to continue";
-      return `${userInfo.credits_remaining} credits remaining`;
-    }
-    return "";
-  }, [user, userInfo]);
+  const creditLabel = "";
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -211,12 +175,6 @@ export default function Home() {
 
   const handleFileSelected = useCallback(
     async (file: File) => {
-      // If user is logged in but has no plan, wait for onboarding
-      if (user && userInfo?.plan === "none") {
-        setHelperText("Please select a plan to continue.");
-        return;
-      }
-
       setHelperText(null);
       setSelectedFile(file);
       setOriginalUrl(URL.createObjectURL(file));
@@ -259,16 +217,6 @@ export default function Home() {
               const errorData = JSON.parse(xhr.responseText);
               errorDetail = errorData.detail || errorDetail;
               
-              if (errorDetail === "ONBOARDING_REQUIRED") {
-                await syncUser();
-                setAppState("idle");
-                return;
-              }
-              if (errorDetail === "CREDITS_EXHAUSTED") {
-                setShowPaywall(true);
-                setAppState("idle");
-                return;
-              }
               if (errorDetail === "GUEST_LIMIT_REACHED") {
                 openSignUp();
                 setAppState("idle");
@@ -292,63 +240,11 @@ export default function Home() {
         setAppState("error");
       }
     },
-    [openSignUp, pollStatus, syncUser, user, userInfo?.plan],
-  );
-
-  const handlePlanSelection = useCallback(
-    async (plan: Plan) => {
-      if (!user) {
-        openSignUp();
-        return;
-      }
-
-      setLoadingPlan(plan);
-      try {
-        const response = await fetch(`${API}/users/select-plan`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            clerk_user_id: user.id,
-            email: user.primaryEmailAddress?.emailAddress || "",
-            plan,
-          }),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.detail || "Could not update plan.");
-        setUserInfo(data);
-        setShowPaywall(false);
-
-        if (plan === "pro" || plan === "lifetime") {
-          // Force onboarding completion before redirecting
-          await fetch(`${API}/users/onboard`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ clerk_user_id: user.id }),
-          });
-
-          const productId = 
-            plan === "pro" 
-              ? "pdt_0NalSjZWHhamGs4oYJvTe" 
-              : "pdt_0NavKn2G5oln4JN2cMrzM";
-          
-          const returnUrl = encodeURIComponent(`${window.location.origin}?success=true`);
-          const email = encodeURIComponent(user.primaryEmailAddress?.emailAddress || "");
-          const baseUrl = "checkout.dodopayments.com";
-          
-          let checkoutUrl = `https://${baseUrl}/buy/${productId}?quantity=1&redirect_url=${returnUrl}&customer_email=${email}&client_reference_id=${user.id}`;
-          
-          window.location.href = checkoutUrl;
-        }
-      } catch (error) {
-        setHelperText(error instanceof Error ? error.message : "Could not update plan.");
-      } finally {
-        setLoadingPlan(null);
-      }
-    },
-    [openSignUp, user],
+    [openSignUp, pollStatus, syncUser, user],
   );
 
   const handleDownload = useCallback(() => {
+
     const link = document.createElement("a");
     link.href = processedUrl;
     link.download = selectedFile?.name
@@ -358,10 +254,6 @@ export default function Home() {
     link.click();
     document.body.removeChild(link);
   }, [processedUrl, selectedFile]);
-
-  // For a NEW account, has_onboarded is 0. 
-  // Once they select ANY plan (even Free), it becomes 1 on the backend.
-  const showOnboarding = Boolean(user && userInfo && userInfo.has_onboarded === 0);
 
   const [scrolled, setScrolled] = useState(false);
 
@@ -378,11 +270,7 @@ export default function Home() {
           
           {/* Immersive Cleanup: Hide Nav during critical processing to focus on the 'Clean UI' */}
           {appState !== "processing" && appState !== "idle" && (
-            <Navbar 
-              userPlan={userInfo?.plan} 
-              creditsRemaining={userInfo?.credits_remaining}
-              theme={appState === "result" ? "light" : "dark"} 
-            />
+            <Navbar theme={appState === "result" ? "light" : "dark"} />
           )}
 
           {/* 🔔 Premium Notification Toast */}
@@ -402,27 +290,16 @@ export default function Home() {
             </div>
           )}
 
-          {showOnboarding && (
-            <OnboardingModal onSelect={handlePlanSelection} loadingPlan={loadingPlan} />
-          )}
 
-          {showPaywall && (
-            <PaywallModal
-              onChoosePlan={handlePlanSelection}
-              onClose={() => setShowPaywall(false)}
-              loadingPlan={loadingPlan}
-            />
-          )}
 
           {appState === "idle" && (
             <div className="animate-fade-in flex flex-col">
-              <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} userPlan={userInfo?.plan} />
+              <HeroSection onFileSelected={handleFileSelected} helperText={helperText ?? creditLabel} />
               
               {/* Unified White Background Container */}
               <div className="relative z-10 bg-white mt-12 md:mt-24 rounded-[32px] md:rounded-[48px] overflow-hidden shadow-sm border border-black/5 mx-2 md:mx-6 mb-6">
                  <div className="space-y-0">
                    <HowItWorks />
-                   <PricingSection onUpgrade={handlePlanSelection} />
                    <Footer />
                  </div>
               </div>
@@ -436,7 +313,6 @@ export default function Home() {
                 progress={progress} 
                 step={step} 
                 startTime={jobStartTime}
-                onUpgrade={() => setShowPaywall(true)}
               />
             </div>
           )}

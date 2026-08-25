@@ -10,12 +10,11 @@ import RecentsMenu from "./RecentsMenu";
 interface HeroSectionProps {
   onFileSelected: (file: File) => void;
   helperText?: string | null;
-  userPlan?: string | null;
 }
 
 const ACCEPTED = ["video/mp4", "video/quicktime", "image/gif", "video/webm"];
 
-export default function HeroSection({ onFileSelected, helperText, userPlan }: HeroSectionProps) {
+export default function HeroSection({ onFileSelected, helperText }: HeroSectionProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,8 +26,7 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
   const validate = (file: File) => {
     if (!ACCEPTED.includes(file.type)) return "Use MP4, MOV, GIF, or WebM.";
 
-    const isPro = userPlan === "pro" || userPlan === "lifetime";
-    const limitMB = isPro ? 100 : 50;
+    const limitMB = 100;
     const limitBytes = limitMB * 1024 * 1024;
 
     if (file.size > limitBytes) return `Maximum file size is ${limitMB}MB for your current plan.`;
@@ -79,9 +77,7 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
             <a href="#how-it-works" className="cursor-pointer group">
               <span className="text-[14px] font-medium text-white/50 hover:text-white transition-colors">How it Works</span>
             </a>
-            <a href="#pricing" className="cursor-pointer group">
-              <span className="text-[14px] font-medium text-white/50 hover:text-white transition-colors">Pricing</span>
-            </a>
+
           </div>
 
           <div className="flex items-center gap-4">
@@ -91,23 +87,7 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
                    <RecentsMenu theme="dark" />
                 </div>
                 
-                <div className="flex flex-col items-end mr-1">
-                  {/* Plan Badge */}
-                  {(userPlan === "pro" || userPlan === "lifetime" || userPlan === "free") && (
-                    <div className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest shadow-sm mb-1 ${
-                      userPlan === "lifetime" ? "bg-amber-500/10 border-amber-500/30 text-amber-500" : 
-                      userPlan === "pro" ? "bg-blue-500/10 border-blue-500/30 text-blue-500" :
-                      "bg-white/10 border-white/20 text-white/60"
-                    }`}>
-                      {userPlan === "lifetime" ? <Crown className="w-2.5 h-2.5" /> : <Star className="w-2.5 h-2.5" />}
-                      {userPlan}
-                    </div>
-                  )}
-                  {/* helperText actually contains the processed credits string from page.tsx */}
-                  <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-white/40 hidden sm:block">
-                    Account Active
-                  </span>
-                </div>
+
                 
                 <UserButton />
               </>
@@ -150,13 +130,7 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
               >
                 How it Works
               </a>
-              <a 
-                href="#pricing" 
-                onClick={() => setMobileMenuOpen(false)}
-                className="text-[32px] font-black uppercase tracking-[0.2em] text-white/50 hover:text-white transition-all no-underline"
-              >
-                Pricing
-              </a>
+
               <div className="flex items-center gap-6 mt-10">
                  {user ? <RecentsMenu theme="dark" /> : <button onClick={() => { openSignIn(); setMobileMenuOpen(false); }} className="text-[18px] font-bold text-white">Login</button>}
               </div>
@@ -232,7 +206,7 @@ export default function HeroSection({ onFileSelected, helperText, userPlan }: He
             />
 
             <p className="mt-10 md:mt-14 text-white/50 text-[10px] md:text-[12px] font-bold uppercase tracking-[0.3em]">
-              MP4, MOV, GIF (MAX. {userPlan === "pro" || userPlan === "lifetime" ? "100MB" : "50MB"})
+              MP4, MOV, GIF (MAX. 100MB)
             </p>
           </div>
 

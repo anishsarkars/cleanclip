@@ -8,12 +8,10 @@ import RecentsMenu from "./RecentsMenu";
 import { useState } from "react";
 
 interface NavbarProps {
-  userPlan?: string;
-  creditsRemaining?: number;
   theme?: "dark" | "light";
 }
 
-export default function Navbar({ userPlan, creditsRemaining, theme = "dark" }: NavbarProps) {
+export default function Navbar({ theme = "dark" }: NavbarProps) {
   const { user, isLoaded } = useUser();
   const { openSignIn } = useClerk();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,7 +27,7 @@ export default function Navbar({ userPlan, creditsRemaining, theme = "dark" }: N
 
       <div className={`hidden lg:flex gap-10 text-[14px] font-black uppercase tracking-[0.2em] ${theme === "light" ? "text-black/40" : "text-white/40"}`}>
         <Link href="#how-it-works" className={`transition-colors no-underline ${theme === "light" ? "hover:text-black" : "hover:text-white"}`}>How it Works</Link>
-        <Link href="#pricing" className={`transition-colors no-underline ${theme === "light" ? "hover:text-black" : "hover:text-white"}`}>Pricing</Link>
+
       </div>
 
       <div className="flex items-center gap-4">
@@ -39,25 +37,7 @@ export default function Navbar({ userPlan, creditsRemaining, theme = "dark" }: N
               <RecentsMenu theme={theme} />
             </div>
             
-            <div className="flex flex-col items-end mr-1">
-              {/* Plan Badge */}
-              {(userPlan === "pro" || userPlan === "lifetime" || userPlan === "free") && (
-                <div className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest shadow-sm mb-1 ${
-                  userPlan === "lifetime" ? "bg-amber-500/10 border-amber-500/30 text-amber-500" : 
-                  userPlan === "pro" ? "bg-blue-500/10 border-blue-500/30 text-blue-500" :
-                  "bg-zinc-500/10 border-zinc-500/20 text-zinc-400"
-                }`}>
-                  {userPlan === "lifetime" ? <Crown className="w-2.5 h-2.5" /> : <Star className="w-2.5 h-2.5" />}
-                  {userPlan}
-                </div>
-              )}
-              {/* Credits Mirroring Hero Section visibility */}
-              {creditsRemaining !== undefined && (
-                <span className={`text-[10px] font-bold uppercase tracking-[0.1em] opacity-40 hidden sm:block`}>
-                  {creditsRemaining} Credits
-                </span>
-              )}
-            </div>
+
             
             <UserButton />
           </>
@@ -104,13 +84,7 @@ export default function Navbar({ userPlan, creditsRemaining, theme = "dark" }: N
               >
                 How it Works
               </Link>
-              <Link 
-                href="#pricing" 
-                onClick={() => setMobileMenuOpen(false)}
-                className={`text-[32px] font-black uppercase tracking-[0.2em] transition-all no-underline ${theme === "light" ? "text-black/40 hover:text-black" : "text-white/50 hover:text-white"}`}
-              >
-                Pricing
-              </Link>
+
               <div className="flex items-center gap-6 mt-10">
                  {user ? <RecentsMenu theme={theme} /> : <button onClick={() => { openSignIn(); setMobileMenuOpen(false); }} className={`text-[18px] font-bold ${theme === "light" ? "text-black" : "text-white"}`}>Login</button>}
               </div>
